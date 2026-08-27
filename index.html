@@ -30,6 +30,7 @@
       <div class="room-pin-badge" id="hudRoomPin" title="Clic para ver o copiar PIN">SALA: GENERANDO...</div>
     </div>
     <div class="hud-right">
+      <a href="assets/apk/gantz-remote.apk" download="gantz-remote.apk" class="hud-btn" style="text-decoration: none; border-color: var(--gantz-cyan); color: var(--gantz-cyan);" title="Descargar APK nativa para Android">📲 APK ANDROID</a>
       <button class="hud-btn" id="btnAudioToggle" title="Activar/Silenciar Efectos de Sonido">🔊 AUDIO ON</button>
       <button class="hud-btn" id="btnOpenQR">📱 CONECTAR TABLET (QR / PIN)</button>
     </div>
@@ -259,6 +260,12 @@
         <div class="qr-url-text" id="qrUrlText" style="flex: 1; margin-top: 0;">https://tu-sitio.vercel.app/remote.html?room=...</div>
         <button class="hud-btn" id="btnCopyUrl" style="padding: 6px 10px; font-size: 0.75rem;" title="Copiar enlace completo">📋</button>
       </div>
+
+      <!-- Direct APK Download Link -->
+      <a href="assets/apk/gantz-remote.apk" download="gantz-remote.apk" class="hud-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px; text-decoration: none; background: rgba(0, 240, 255, 0.15); border-color: var(--gantz-cyan); color: #fff; font-size: 0.8rem; padding: 8px 12px;">
+        <span>🤖</span> DESCARGAR APP ANDROID (.APK)
+      </a>
+
       <button class="qr-close-btn" id="btnCloseQR">CERRAR</button>
     </div>
   </div>
