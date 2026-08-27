@@ -1,7 +1,9 @@
-// Gantz Mobile Remote Controller (PeerJS P2P Cloud)
+// Gantz Mobile Remote Controller (Multi-Layer Transport + Logcat)
 (function() {
   let peer = null;
   let conn = null;
+  let localWS = null;
+  let broadcastChan = null;
   let roomId = null;
   let aliensList = window.GANTZ_DEFAULT_ALIENS || [];
   
@@ -26,109 +28,93 @@
   const btnPastePin = document.getElementById('btnPastePin');
   const connectFeedback = document.getElementById('connectFeedback');
 
-  let broadcastChan = null;
+  const syncDot = document.getElementById('syncDot');
+  const syncText = document.getElementById('syncText');
+  const headerTimer = document.getElementById('headerTimer');
+  const mainTimerDisplay = document.getElementById('mainTimerDisplay');
+  const timerStatusLabel = document.getElementById('timerStatusLabel');
+  const timerBox = document.getElementById('timerBox');
+  const btnPlayPause = document.getElementById('btnPlayPause');
+  const playIcon = document.getElementById('playIcon');
+  const playText = document.getElementById('playText');
+  const btnResetTimer = document.getElementById('btnResetTimer');
 
-  // Setup BroadcastChannel immediately
-  try {
-    if (typeof BroadcastChannel !== 'undefined') {
-      broadcastChan = new BroadcastChannel('gantz_sync_channel');
-      broadcastChan.onmessage = (event) => {
-        if (event.data) handleServerMessage(event.data);
-      };
-    }
-  } catch (e) {}
+  const monstersContainer = document.getElementById('monstersContainer');
+  const btnNewAlien = document.getElementById('btnNewAlien');
+  const alienModal = document.getElementById('alienModal');
+  const alienForm = document.getElementById('alienForm');
+  const alienModalTitle = document.getElementById('alienModalTitle');
 
-  function showFeedback(msg, color = '#ffd700') {
-    if (connectFeedback) {
-      connectFeedback.textContent = msg;
-      connectFeedback.style.color = color;
-      connectFeedback.style.display = 'block';
+  const huntersContainer = document.getElementById('huntersContainer');
+  const btnAddHunter = document.getElementById('btnAddHunter');
+  const btnBroadcastScoring = document.getElementById('btnBroadcastScoring');
+
+  const customMsgInput = document.getElementById('customMsgInput');
+  const btnSendCustomMsg = document.getElementById('btnSendCustomMsg');
+
+  function log(msg, details) {
+    if (window.GantzLogger) window.GantzLogger.log(msg, details);
+  }
+  function logNet(msg, details) {
+    if (window.GantzLogger) window.GantzLogger.net(msg, details);
+  }
+  function logWarn(msg, details) {
+    if (window.GantzLogger) window.GantzLogger.warn(msg, details);
+  }
+  function logError(msg, details) {
+    if (window.GantzLogger) window.GantzLogger.error(msg, details);
+  }
+
+  function formatTime(totalSec) {
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+
+  function vibrate(ms = 30) {
+    if ('vibrate' in navigator) {
+      try { navigator.vibrate(ms); } catch (e) {}
     }
   }
 
-  // PeerJS Connection Setup
-  function connectToRoom(targetRoomId) {
-    let clean = targetRoomId.trim().toUpperCase();
-    if (!clean) return;
+  window.switchTab = function(tabId) {
+    vibrate(15);
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
-    // Normalize room ID: if user types "2ZN5", turn it into "gantz-2zn5"
-    let peerTarget = clean.toLowerCase();
-    if (!peerTarget.startsWith('gantz-')) {
-      peerTarget = 'gantz-' + peerTarget;
-    }
-    roomId = peerTarget;
+    const targetPanel = document.getElementById(tabId);
+    if (targetPanel) targetPanel.classList.add('active');
 
-    // Immediately hide the connect overlay to let the user control the app
-    roomConnectOverlay.style.display = 'none';
-    syncDot.style.background = '#00ff66';
-    syncDot.style.boxShadow = '0 0 8px #00ff66';
-    syncText.textContent = clean;
-    syncText.style.color = '#00ff66';
+    const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => 
+      b.getAttribute('onclick')?.includes(tabId)
+    );
+    if (activeBtn) activeBtn.classList.add('active');
+  };
 
-    // 1. BroadcastChannel for local preview
-    try {
-      if (typeof BroadcastChannel !== 'undefined') {
-        if (!broadcastChan) {
-          broadcastChan = new BroadcastChannel('gantz_sync_channel');
-          broadcastChan.onmessage = (event) => {
-            if (event.data) handleServerMessage(event.data);
-          };
-        }
-        broadcastChan.postMessage({ type: 'REQUEST_SYNC', targetRoom: roomId });
-      }
-    } catch (e) {}
-
-    // 2. PeerJS WebRTC for Cloud/Mobile
-    try {
-      if (!peer) {
-        peer = new Peer();
-      }
-
-      function doPeerConnect() {
-        console.log('Peer ready, connecting to display room:', roomId);
-        conn = peer.connect(roomId, { reliable: true });
-
-        conn.on('open', () => {
-          console.log('WebRTC Connection established with Display!');
-          syncDot.style.background = '#00ff66';
-          syncDot.style.boxShadow = '0 0 8px #00ff66';
-          syncText.textContent = clean;
-          syncText.style.color = '#00ff66';
-          conn.send({ type: 'REQUEST_SYNC' });
-        });
-
-        conn.on('data', (data) => {
-          handleServerMessage(data);
-        });
-
-        conn.on('close', () => {
-          console.warn('Connection closed');
-        });
-      }
-
-      if (peer.open) {
-        doPeerConnect();
-      } else {
-        peer.on('open', () => {
-          doPeerConnect();
-        });
-      }
-    } catch (err) {
-      console.warn('Peer error:', err);
-    }
-  }
-
+  // Broadcast to all connected transports
   function sendDisplay(data) {
+    data.source = 'remote';
     data.targetRoom = roomId;
+    logNet(`Enviando a Display [${data.type}]`, data);
+
+    // 1. WebRTC DataChannel
     if (conn && conn.open) {
-      conn.send(data);
+      try { conn.send(data); } catch (e) {}
     }
+    // 2. Local WebSocket Relay
+    if (localWS && localWS.readyState === WebSocket.OPEN) {
+      try { localWS.send(JSON.stringify(data)); } catch (e) {}
+    }
+    // 3. Browser BroadcastChannel
     if (broadcastChan) {
       try { broadcastChan.postMessage(data); } catch (e) {}
     }
   }
 
   function handleServerMessage(msg) {
+    if (!msg || msg.source === 'remote') return;
+    logNet(`Respuesta recibida de Display [${msg.type}]`, msg);
+
     switch (msg.type) {
       case 'SYNC_STATE':
         appState = msg.state;
@@ -163,6 +149,126 @@
     renderTimer();
     renderMonsters();
     renderHunters();
+  }
+
+  // Connect to Room
+  function connectToRoom(targetRoomId) {
+    let clean = targetRoomId.trim().toUpperCase();
+    if (!clean) return;
+
+    let peerTarget = clean.toLowerCase();
+    if (!peerTarget.startsWith('gantz-')) {
+      peerTarget = 'gantz-' + peerTarget;
+    }
+    roomId = peerTarget;
+
+    if (window.GantzLogger) {
+      window.GantzLogger.updateState('roomId', clean);
+    }
+
+    log(`Iniciando conexión con la sala [${clean}]...`);
+    roomConnectOverlay.style.display = 'none';
+    syncDot.style.background = '#00ff66';
+    syncDot.style.boxShadow = '0 0 8px #00ff66';
+    syncText.textContent = clean;
+    syncText.style.color = '#00ff66';
+
+    // Layer 1: Try Local WebSocket if on localhost
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      try {
+        const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        if (!localWS || localWS.readyState !== WebSocket.OPEN) {
+          localWS = new WebSocket(`${wsProtocol}//${location.host}`);
+          localWS.onopen = () => {
+            logNet('⚡ Servidor WebSocket Local Conectado');
+            if (window.GantzLogger) window.GantzLogger.updateState('transport', 'WebSocket Local');
+            sendDisplay({ type: 'REQUEST_SYNC' });
+          };
+          localWS.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              handleServerMessage(data);
+            } catch (e) {}
+          };
+        }
+      } catch (e) {}
+    }
+
+    // Layer 2: BroadcastChannel
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        if (!broadcastChan) {
+          broadcastChan = new BroadcastChannel('gantz_sync_channel');
+          broadcastChan.onmessage = (event) => {
+            handleServerMessage(event.data);
+          };
+        }
+        broadcastChan.postMessage({ type: 'REQUEST_SYNC', targetRoom: roomId, source: 'remote' });
+      }
+    } catch (e) {}
+
+    // Layer 3: PeerJS WebRTC
+    try {
+      if (!peer) {
+        logNet('Inicializando cliente PeerJS WebRTC...');
+        if (window.GantzLogger) window.GantzLogger.updateState('brokerStatus', 'Conectando...');
+
+        peer = new Peer({
+          config: {
+            iceServers: [
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:stun1.l.google.com:19302' },
+              { urls: 'stun:global.stun.twilio.com:3478' }
+            ]
+          }
+        });
+
+        peer.on('open', (id) => {
+          logNet(`✓ PeerJS listo. ID Local: [${id}]`);
+          if (window.GantzLogger) {
+            window.GantzLogger.updateState('brokerStatus', 'Online');
+            window.GantzLogger.updateState('peerId', id);
+          }
+          doPeerConnect();
+        });
+
+        peer.on('error', (err) => {
+          logError('Error en PeerJS:', err);
+          if (window.GantzLogger) window.GantzLogger.updateState('brokerStatus', 'Error: ' + err.type);
+        });
+      } else if (peer.open) {
+        doPeerConnect();
+      }
+
+      function doPeerConnect() {
+        logNet(`Intentando conexión WebRTC a Display [${roomId}]...`);
+        conn = peer.connect(roomId, { reliable: true });
+
+        conn.on('open', () => {
+          logNet('✓ Conexión WebRTC P2P abierta con Display');
+          if (window.GantzLogger) {
+            window.GantzLogger.updateState('webrtcStatus', 'Conectado');
+            window.GantzLogger.updateState('transport', 'WebRTC P2P');
+          }
+          conn.send({ type: 'REQUEST_SYNC', source: 'remote' });
+        });
+
+        conn.on('data', (data) => {
+          handleServerMessage(data);
+        });
+
+        conn.on('close', () => {
+          logWarn('Conexión WebRTC cerrada');
+          if (window.GantzLogger) window.GantzLogger.updateState('webrtcStatus', 'Cerrado');
+        });
+
+        conn.on('error', (err) => {
+          logError('Error en conexión WebRTC DataChannel:', err);
+        });
+      }
+    } catch (err) {
+      logError('Error en setup WebRTC:', err);
+    }
   }
 
   // 1. TIMER
@@ -201,9 +307,14 @@
 
   btnPlayPause.addEventListener('click', () => {
     vibrate(40);
-    if (!appState || !appState.timer) return;
-    const action = appState.timer.isRunning ? 'pause' : 'start';
+    const isRunning = appState && appState.timer ? appState.timer.isRunning : false;
+    const action = isRunning ? 'pause' : 'start';
+    if (appState && appState.timer) appState.timer.isRunning = !isRunning;
+    renderTimer();
     sendDisplay({ type: 'TIMER_CONTROL', action });
+    if (action === 'start') {
+      sendDisplay({ type: 'SET_MODE', mode: 'mission' });
+    }
   });
 
   btnResetTimer.addEventListener('click', () => {
@@ -255,6 +366,8 @@
     vibrate(30);
     const alien = aliensList.find(a => a.id === alienId);
     if (alien) {
+      if (appState) appState.currentAlien = alien;
+      renderMonsters();
       sendDisplay({ type: 'SELECT_ALIEN', alien });
     }
   };
@@ -415,6 +528,11 @@
     sendDisplay({ type: 'TRIGGER_SOUND', sound });
   };
 
+  window.forceReconnectGantz = function() {
+    log('Forzando reconexión en Remote...');
+    if (roomId) connectToRoom(roomId);
+  };
+
   // Initial Render
   renderAll();
 
@@ -423,7 +541,6 @@
   const roomParam = urlParams.get('room');
 
   if (roomParam) {
-    roomConnectOverlay.style.display = 'none';
     connectToRoom(roomParam);
   } else {
     roomConnectOverlay.style.display = 'flex';
@@ -453,7 +570,6 @@
         }
       } catch (err) {
         roomPinInput.focus();
-        showFeedback('Presiona CTRL+V para pegar');
       }
     });
   }

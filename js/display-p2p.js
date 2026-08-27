@@ -1,7 +1,9 @@
-// Gantz Web Cloud Display Controller (PeerJS P2P)
+// Gantz Web Cloud Display Controller (Multi-Layer Transport + Logcat)
 (function() {
   let peer = null;
   let activeConn = null;
+  let localWS = null;
+  let broadcastChan = null;
   let roomId = null;
   let typewriterTimeout = null;
   let isMuted = false;
@@ -66,9 +68,7 @@
   const btnAudioToggle = document.getElementById('btnAudioToggle');
   const audioUnlockOverlay = document.getElementById('audioUnlockOverlay');
 
-  let broadcastChan = null;
-
-  // Load saved state if any
+  // Load saved state
   try {
     const saved = localStorage.getItem('gantz_cloud_state');
     if (saved) {
@@ -84,40 +84,45 @@
     } catch (e) {}
   }
 
-  // Copy helper with feedback
+  function log(msg, details) {
+    if (window.GantzLogger) window.GantzLogger.log(msg, details);
+  }
+  function logNet(msg, details) {
+    if (window.GantzLogger) window.GantzLogger.net(msg, details);
+  }
+  function logWarn(msg, details) {
+    if (window.GantzLogger) window.GantzLogger.warn(msg, details);
+  }
+  function logError(msg, details) {
+    if (window.GantzLogger) window.GantzLogger.error(msg, details);
+  }
+
+  // Copy helper
   function copyToClipboard(text, element, successMsg = '¡COPIADO!') {
     navigator.clipboard.writeText(text).then(() => {
       const origText = element.textContent;
       element.textContent = successMsg;
       element.style.borderColor = '#00ff66';
       element.style.color = '#00ff66';
+      log('PIN copiado al portapapeles: ' + text);
       setTimeout(() => {
         element.textContent = origText;
         element.style.borderColor = '';
         element.style.color = '';
       }, 1500);
     }).catch(() => {
-      // Fallback
       prompt('Copia este código manualmente:', text);
     });
   }
 
   if (btnCopyPin) {
-    btnCopyPin.addEventListener('click', () => {
-      copyToClipboard(roomId, btnCopyPin, '✓ ¡PIN COPIADO!');
-    });
+    btnCopyPin.addEventListener('click', () => copyToClipboard(roomId, btnCopyPin, '✓ ¡PIN COPIADO!'));
   }
-
   if (btnCopyUrl) {
-    btnCopyUrl.addEventListener('click', () => {
-      copyToClipboard(qrUrlText.textContent, btnCopyUrl, '✓');
-    });
+    btnCopyUrl.addEventListener('click', () => copyToClipboard(qrUrlText.textContent, btnCopyUrl, '✓'));
   }
-
   if (hudRoomPin) {
-    hudRoomPin.addEventListener('click', () => {
-      qrModal.classList.add('active');
-    });
+    hudRoomPin.addEventListener('click', () => qrModal.classList.add('active'));
   }
 
   // Audio unlock listener
@@ -129,6 +134,7 @@
     if (audioUnlockOverlay) {
       audioUnlockOverlay.style.display = 'none';
     }
+    log('Audio desbloqueado por interacción del usuario');
   }
   document.addEventListener('click', unlockAudio, { once: true });
   if (audioUnlockOverlay) {
@@ -146,12 +152,9 @@
 
   // QR Modal Toggle
   btnOpenQR.addEventListener('click', () => qrModal.classList.add('active'));
-  if (hudRoomPin) hudRoomPin.addEventListener('click', () => qrModal.classList.add('active'));
   btnCloseQR.addEventListener('click', () => qrModal.classList.remove('active'));
 
-  // Pure JS QR Code SVG generator
   function renderQRCode(url) {
-    // Generate simple SVG QR Code with qrcode-generator or fallback
     if (typeof QRCode !== 'undefined' && qrContainer) {
       qrContainer.innerHTML = '';
       new QRCode(qrContainer, {
@@ -165,7 +168,6 @@
     }
   }
 
-  // Generate short readable Room ID
   function generateRoomId() {
     const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
     let code = 'GANTZ-';
@@ -175,7 +177,6 @@
     return code;
   }
 
-  // Typewriter effect function
   function typewrite(element, text, speed = 40, callback) {
     if (typewriterTimeout) clearTimeout(typewriterTimeout);
     element.innerHTML = '<span class="cursor-blink"></span>';
@@ -210,8 +211,8 @@
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   }
 
-  // Set View Mode
   function setMode(mode) {
+    logNet(`Display cambio de modo -> [${mode.toUpperCase()}]`);
     viewStandby.style.display = 'none';
     viewMission.style.display = 'none';
     viewBriefing.style.display = 'none';
@@ -321,28 +322,42 @@
         appState.timer.isRunning = false;
         if (window.GantzAudio) window.GantzAudio.playAlarm();
         missionSubstatus.textContent = '¡¡¡TIEMPO AGOTADO: TRANSFERENCIA FINALIZADA!!!';
+        logWarn('El temporizador ha llegado a cero');
       }
       if (appState.mode === 'mission') {
         updateTimerDisplay();
       }
-      // Broadcast timer tick to active remote
       sendRemote({ type: 'TIMER_TICK', timer: appState.timer });
     }
   }, 1000);
 
+  // Broadcast to all connected transports
   function sendRemote(msg) {
+    msg.source = 'display';
+    msg.roomId = roomId;
+    
+    // 1. WebRTC DataChannel
     if (activeConn && activeConn.open) {
-      activeConn.send(msg);
+      try { activeConn.send(msg); } catch (e) {}
     }
+    // 2. Local WebSocket Relay
+    if (localWS && localWS.readyState === WebSocket.OPEN) {
+      try { localWS.send(JSON.stringify(msg)); } catch (e) {}
+    }
+    // 3. Browser BroadcastChannel
     if (broadcastChan) {
       try { broadcastChan.postMessage(msg); } catch (e) {}
     }
   }
 
-  // Handle messages from Remote tablet
+  // Handle messages from Remote
   function handleRemoteMessage(msg) {
+    if (!msg || msg.source === 'display') return;
+    logNet(`Comando recibido de Remote [${msg.type}]`, msg);
+
     switch (msg.type) {
       case 'REQUEST_SYNC':
+        logNet('Enviando sincronización de estado a Remote');
         sendRemote({
           type: 'SYNC_STATE',
           state: appState,
@@ -415,11 +430,15 @@
     }
   }
 
-  // Initialize PeerJS Cloud WebRTC + Local BroadcastChannel
-  function initPeerJS() {
+  // Multi-layer Transport Initialization
+  function initMultiTransport() {
     roomId = generateRoomId();
     hudRoomPin.textContent = `SALA: ${roomId}`;
     qrPinDisplay.textContent = roomId;
+
+    if (window.GantzLogger) {
+      window.GantzLogger.updateState('roomId', roomId);
+    }
 
     const currentUrl = new URL(window.location.href);
     currentUrl.pathname = currentUrl.pathname.replace(/\/index\.html$|\/$/, '') + '/remote.html';
@@ -429,39 +448,83 @@
     qrUrlText.textContent = remoteUrl;
     renderQRCode(remoteUrl);
 
-    // Setup BroadcastChannel for 0ms same-origin tab preview
+    log(`Sala iniciada con código [${roomId}]`);
+
+    // Layer 1: Try Local WebSocket if on localhost
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      try {
+        const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        localWS = new WebSocket(`${wsProtocol}//${location.host}`);
+        
+        localWS.onopen = () => {
+          logNet('⚡ Servidor WebSocket Local Conectado (preview-server)');
+          if (window.GantzLogger) window.GantzLogger.updateState('transport', 'WebSocket Local');
+        };
+
+        localWS.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleRemoteMessage(data);
+          } catch (e) {}
+        };
+
+        localWS.onerror = () => {
+          logWarn('WebSocket local no disponible, usando WebRTC/BroadcastChannel');
+        };
+      } catch (e) {}
+    }
+
+    // Layer 2: BroadcastChannel for Cross-Tab Sync
     try {
       if (typeof BroadcastChannel !== 'undefined') {
         broadcastChan = new BroadcastChannel('gantz_sync_channel');
         broadcastChan.onmessage = (event) => {
-          const msg = event.data;
-          if (msg) {
-            handleRemoteMessage(msg);
-          }
+          handleRemoteMessage(event.data);
         };
+        logNet('⚡ BroadcastChannel inicializado');
       }
     } catch (e) {}
 
-    // Create Peer
+    // Layer 3: PeerJS WebRTC for Cloud P2P
     try {
-      peer = new Peer(roomId.toLowerCase());
+      logNet('Conectando a broker PeerJS...');
+      if (window.GantzLogger) window.GantzLogger.updateState('brokerStatus', 'Conectando...');
+
+      peer = new Peer(roomId.toLowerCase(), {
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+          ]
+        }
+      });
 
       peer.on('open', (id) => {
-        console.log('Gantz Peer Room ready:', id);
+        logNet(`✓ Broker PeerJS listo. ID Registrado: [${id}]`);
+        if (window.GantzLogger) {
+          window.GantzLogger.updateState('brokerStatus', 'Online');
+          window.GantzLogger.updateState('peerId', id);
+        }
         hudStatusBadge.style.borderColor = '#00ff66';
         hudStatusBadge.style.color = '#00ff66';
       });
 
       peer.on('connection', (conn) => {
         activeConn = conn;
-        console.log('Tablet Remote connected via WebRTC!');
+        logNet(`Conexión entrante desde Tablet Remote (${conn.peer})`);
 
         conn.on('open', () => {
+          logNet('✓ Canal WebRTC P2P establecido con la tablet');
+          if (window.GantzLogger) {
+            window.GantzLogger.updateState('webrtcStatus', 'Conectado');
+            window.GantzLogger.updateState('transport', 'WebRTC P2P');
+          }
           hudStatusBadge.style.borderColor = '#00f0ff';
           hudStatusBadge.style.color = '#00f0ff';
           hudStatusText.textContent = 'TABLET CONECTADA';
-          // Send initial state to tablet
-          conn.send({
+          
+          sendRemote({
             type: 'SYNC_STATE',
             state: appState,
             aliens: aliensList,
@@ -475,24 +538,38 @@
         });
 
         conn.on('close', () => {
+          logWarn('Canal WebRTC cerrado por la tablet');
+          if (window.GantzLogger) window.GantzLogger.updateState('webrtcStatus', 'Cerrado');
           hudStatusBadge.style.borderColor = '#ff003c';
           hudStatusBadge.style.color = '#ff003c';
           hudStatusText.textContent = 'STANDBY';
         });
+
+        conn.on('error', (err) => {
+          logError('Error en conexión WebRTC:', err);
+        });
       });
 
       peer.on('error', (err) => {
-        console.warn('Peer error:', err);
+        logError('Error en PeerJS Broker:', err);
+        if (window.GantzLogger) window.GantzLogger.updateState('brokerStatus', 'Error: ' + err.type);
         if (err.type === 'unavailable-id') {
-          setTimeout(initPeerJS, 1000);
+          setTimeout(initMultiTransport, 1000);
         }
       });
     } catch (err) {
-      console.warn('Peer init warning:', err);
+      logError('Error inicializando PeerJS:', err);
     }
   }
 
+  window.forceReconnectGantz = function() {
+    log('Forzando reinicio de conexiones de red...');
+    if (peer) try { peer.destroy(); } catch (e) {}
+    if (localWS) try { localWS.close(); } catch (e) {}
+    initMultiTransport();
+  };
+
   // Boot
   setMode('standby');
-  initPeerJS();
+  initMultiTransport();
 })();
