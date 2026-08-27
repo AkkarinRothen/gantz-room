@@ -456,9 +456,10 @@
     document.getElementById('alienFormName').value = alien.name || '';
     document.getElementById('alienFormCat').value = alien.category || '';
     document.getElementById('alienFormPoints').value = alien.points || 0;
+    document.getElementById('alienFormCharacteristics').value = alien.characteristics || alien.traits || '';
     document.getElementById('alienFormLikes').value = alien.likes || '';
+    document.getElementById('alienFormDislikes').value = alien.dislikes || '';
     document.getElementById('alienFormQuote').value = alien.quote || '';
-    document.getElementById('alienFormTraits').value = alien.traits || alien.description || '';
     document.getElementById('alienFormImage').value = alien.image || '';
     if (alienPreviewImg) alienPreviewImg.src = alien.image || 'assets/aliens/alien_negi.jpg';
 
@@ -489,9 +490,10 @@
       name: document.getElementById('alienFormName').value,
       category: document.getElementById('alienFormCat').value || 'Misión',
       points: parseInt(document.getElementById('alienFormPoints').value, 10) || 0,
-      likes: document.getElementById('alienFormLikes').value || 'Las cosas raras',
+      characteristics: document.getElementById('alienFormCharacteristics').value || 'FUERTE',
+      likes: document.getElementById('alienFormLikes').value || 'LAS COSAS RARAS',
+      dislikes: document.getElementById('alienFormDislikes').value || '',
       quote: document.getElementById('alienFormQuote').value || '...',
-      traits: document.getElementById('alienFormTraits').value || 'Sin clasificar',
       image: document.getElementById('alienFormImage').value || 'assets/aliens/alien_negi.jpg'
     };
 

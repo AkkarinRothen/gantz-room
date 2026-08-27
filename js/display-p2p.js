@@ -49,10 +49,11 @@
   const viewBriefing = document.getElementById('viewBriefing');
   const briefingImg = document.getElementById('briefingImg');
   const briefingName = document.getElementById('briefingName');
-  const briefingQuote = document.getElementById('briefingQuote');
+  const briefingChars = document.getElementById('briefingChars');
   const briefingLikes = document.getElementById('briefingLikes');
-  const briefingTraits = document.getElementById('briefingTraits');
-  const briefingPoints = document.getElementById('briefingPoints');
+  const briefingDislikes = document.getElementById('briefingDislikes');
+  const briefingDislikesWrap = document.getElementById('briefingDislikesWrap');
+  const briefingQuote = document.getElementById('briefingQuote');
 
   const viewScoring = document.getElementById('viewScoring');
   const scoringList = document.getElementById('scoringList');
@@ -255,11 +256,22 @@
         if (appState.currentAlien) {
           const alien = appState.currentAlien;
           briefingImg.src = alien.image || 'assets/aliens/alien_negi.jpg';
-          briefingName.textContent = alien.name;
-          briefingQuote.textContent = alien.quote ? `"${alien.quote}"` : '...';
-          if (briefingLikes) briefingLikes.textContent = alien.likes || 'Las cosas raras';
-          if (briefingTraits) briefingTraits.textContent = alien.traits || alien.description || 'Poco amigable';
-          if (briefingPoints) briefingPoints.textContent = `RECOMPENSA: ${alien.points || 0} PTO${alien.points === 1 ? '' : 'S'}`;
+          briefingName.textContent = (alien.name || 'ALIEN').toUpperCase();
+
+          const chars = (alien.characteristics || alien.traits || 'FUERTE').split('\n').map(c => c.trim()).filter(Boolean).join('<br>');
+          if (briefingChars) briefingChars.innerHTML = chars || 'FUERTE';
+
+          if (briefingLikes) briefingLikes.textContent = (alien.likes || 'LAS COSAS RARAS').toUpperCase();
+
+          if (alien.dislikes && alien.dislikes.trim()) {
+            if (briefingDislikesWrap) briefingDislikesWrap.style.display = 'flex';
+            if (briefingDislikes) briefingDislikes.textContent = alien.dislikes.toUpperCase();
+          } else {
+            if (briefingDislikesWrap) briefingDislikesWrap.style.display = 'none';
+          }
+
+          const q = alien.quote || '...';
+          if (briefingQuote) briefingQuote.innerHTML = q.replace(/\n/g, '<br>').toUpperCase();
         }
         if (window.GantzAudio) window.GantzAudio.playSphereBoot();
         break;

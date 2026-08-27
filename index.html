@@ -90,27 +90,39 @@
             <div class="mission-substatus" id="missionSubstatus">TIEMPO LÍMITE DE TRANSFERENCIA</div>
           </div>
 
-          <!-- 3. BRIEFING / MONSTER VIEW -->
+          <!-- 3. BRIEFING / MONSTER VIEW (MANGA CANONICAL LAYOUT) -->
           <div class="view-briefing" id="viewBriefing">
-            <div class="briefing-portrait-wrap">
-              <img src="assets/aliens/alien_negi.jpg" alt="Target" class="briefing-portrait" id="briefingImg">
-              <div class="briefing-scanline"></div>
+            <div class="manga-briefing-header">
+              AHORA IRÉIS A MATAR A ESTE TIPO:
             </div>
-            <div class="briefing-content-wrap">
-              <div class="briefing-target-name" id="briefingName">Alien Cebollín (Junior)</div>
-              <div class="briefing-quote" id="briefingQuote">"¡Te doy cebollín... dame cebollín...!"</div>
-              <div class="briefing-info-grid">
-                <div class="briefing-row">
-                  <span class="briefing-label">💚 LE GUSTA:</span>
-                  <span class="briefing-val" id="briefingLikes">Las cebolletas frescas</span>
-                </div>
-                <div class="briefing-row">
-                  <span class="briefing-label">👁️ RASGOS:</span>
-                  <span class="briefing-val" id="briefingTraits">Pequeño, verde y muy llorón</span>
-                </div>
+            <div class="manga-briefing-grid">
+              <!-- Left: Square Photo Frame with Name on top border -->
+              <div class="manga-portrait-frame">
+                <div class="manga-target-name-badge" id="briefingName">ONION ALIEN</div>
+                <img src="assets/aliens/alien_negi.jpg" alt="Target" class="manga-target-img" id="briefingImg">
               </div>
-              <div class="briefing-reward-wrap">
-                <span class="briefing-points-pill" id="briefingPoints">RECOMPENSA: 1 PTO</span>
+
+              <!-- Right: Canonical Manga Data Rows -->
+              <div class="manga-info-col">
+                <div class="manga-field-block">
+                  <div class="manga-field-title">CARACTERÍSTICAS:</div>
+                  <div class="manga-field-val" id="briefingChars">FUERTE<br>MALOLIENTE</div>
+                </div>
+
+                <div class="manga-field-block">
+                  <div class="manga-field-title">LE GUSTA:</div>
+                  <div class="manga-field-val" id="briefingLikes">LAS CEBOLLETAS, LA AMISTAD</div>
+                </div>
+
+                <div class="manga-field-block" id="briefingDislikesWrap">
+                  <div class="manga-field-title">ODIA:</div>
+                  <div class="manga-field-val" id="briefingDislikes">A LOS QUE SON MÁS PEQUEÑOS QUE ÉL</div>
+                </div>
+
+                <div class="manga-field-block">
+                  <div class="manga-field-title">FRASE FAVORITA:</div>
+                  <div class="manga-field-val" id="briefingQuote">¡¡CON CEBOLLAS ME BASTA!!</div>
+                </div>
               </div>
             </div>
           </div>
