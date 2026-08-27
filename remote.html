@@ -446,6 +446,72 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: 100 POINTS REWARDS ==================== -->
+  <div class="modal-overlay" id="modal100Pts" style="z-index: 10007;">
+    <div class="modal-content" style="max-width: 520px; border: 1px solid var(--gantz-gold); box-shadow: 0 0 30px rgba(255,215,0,0.3);">
+      <div class="card-header" style="border-bottom: 1px dashed rgba(255,215,0,0.4); padding-bottom: 8px;">
+        <div class="card-title" style="color: var(--gantz-gold);">🏆 MENÚ DE 100 PUNTOS</div>
+        <button class="btn btn-sm btn-danger" onclick="close100PtsModal()">✕</button>
+      </div>
+
+      <div style="margin: 12px 0; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,215,0,0.2);">
+        <div style="font-size: 0.8rem; color: #94a3b8;">Cazador seleccionado:</div>
+        <div style="font-size: 1.1rem; font-weight: 900; color: #fff;" id="modal100HunterName">Kei Kurono</div>
+        <div style="font-size: 0.85rem; color: var(--gantz-gold); font-weight: bold;" id="modal100HunterPoints">Puntos Acumulados: 100 pts</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; text-align: left; font-size: 0.8rem;">
+        <!-- Option 1 -->
+        <label style="display: flex; gap: 10px; align-items: flex-start; background: rgba(6,8,13,0.8); border: 1px solid rgba(0,240,255,0.3); border-radius: 6px; padding: 10px; cursor: pointer;">
+          <input type="radio" name="opt100Choice" value="1" checked style="margin-top: 3px; accent-color: var(--gantz-gold);">
+          <div>
+            <strong style="color: #fff; font-size: 0.85rem;">1. BORRAR MEMORIA Y SER LIBERADO</strong>
+            <div style="color: #94a3b8; font-size: 0.72rem; margin-top: 2px;">El cazador sale de Gantz con vida y vuelve a su rutina sin recordar nada.</div>
+          </div>
+        </label>
+
+        <!-- Option 2 -->
+        <label style="display: flex; flex-direction: column; gap: 6px; background: rgba(6,8,13,0.8); border: 1px solid rgba(0,240,255,0.3); border-radius: 6px; padding: 10px; cursor: pointer;">
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <input type="radio" name="opt100Choice" value="2" style="margin-top: 3px; accent-color: var(--gantz-gold);">
+            <div>
+              <strong style="color: #fff; font-size: 0.85rem;">2. OBTENER UN ARMA MÁS POTENTE</strong>
+              <div style="color: #94a3b8; font-size: 0.72rem; margin-top: 2px;">Elige el arma especial de 100 puntos a entregar:</div>
+            </div>
+          </div>
+          <select class="form-input" id="select100Weapon" style="margin-top: 4px; font-size: 0.75rem;">
+            <option value="wpn-zgun">⚡ Cañón Gravitatorio (Z-Gun)</option>
+            <option value="wpn-bike">🏍️ Monociclo Flotante (Gantz Bike)</option>
+            <option value="wpn-sword">🗡️ Katana Extensible de 30m</option>
+          </select>
+        </label>
+
+        <!-- Option 3 -->
+        <label style="display: flex; flex-direction: column; gap: 6px; background: rgba(6,8,13,0.8); border: 1px solid rgba(0,240,255,0.3); border-radius: 6px; padding: 10px; cursor: pointer;">
+          <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <input type="radio" name="opt100Choice" value="3" style="margin-top: 3px; accent-color: var(--gantz-gold);">
+            <div>
+              <strong style="color: #fff; font-size: 0.85rem;">3. REVIVIR A UNA PERSONA DE LA MEMORIA</strong>
+              <div style="color: #94a3b8; font-size: 0.72rem; margin-top: 2px;">Selecciona al compañero caído que Gantz reconstruirá:</div>
+            </div>
+          </div>
+          <select class="form-input" id="select100Resurrect" style="margin-top: 4px; font-size: 0.75rem;">
+            <!-- Populated dynamically with dead hunters -->
+          </select>
+        </label>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
+        <button type="button" class="btn btn-cyan" onclick="project100PtsMenu()">
+          📺 PROYECTAR MENÚ EN LA ESFERA
+        </button>
+        <button type="button" class="btn btn-gold" onclick="confirm100PtsReward()">
+          ⚡ CONFIRMAR Y OTORGAR ELECCIÓN (-100 PTS)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/logger.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>

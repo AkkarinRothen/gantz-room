@@ -73,6 +73,15 @@
   const wpnDisplayDamage = document.getElementById('wpnDisplayDamage');
   const wpnDisplayRange = document.getElementById('wpnDisplayRange');
 
+  const view100Pts = document.getElementById('view100Pts');
+  const rewardHunterTitle = document.getElementById('rewardHunterTitle');
+  const rewardCardOpt1 = document.getElementById('rewardCardOpt1');
+  const rewardCardOpt2 = document.getElementById('rewardCardOpt2');
+  const rewardCardOpt3 = document.getElementById('rewardCardOpt3');
+  const rewardResolutionBox = document.getElementById('rewardResolutionBox');
+  const rewardResolutionTitle = document.getElementById('rewardResolutionTitle');
+  const rewardResolutionBody = document.getElementById('rewardResolutionBody');
+
   const qrModal = document.getElementById('qrModal');
   const qrPinDisplay = document.getElementById('qrPinDisplay');
   const qrContainer = document.getElementById('qrContainer');
@@ -235,6 +244,7 @@
     viewScoring.style.display = 'none';
     viewBroadcast.style.display = 'none';
     viewWeapon.style.display = 'none';
+    if (view100Pts) view100Pts.style.display = 'none';
     
     sphereAssembly.classList.remove('is-open', 'active-mission');
     sphereDoors.style.display = 'none';
@@ -244,6 +254,16 @@
     saveState();
 
     switch (mode) {
+      case '100pts':
+        if (view100Pts) view100Pts.style.display = 'flex';
+        const h = appState.rewardHunter || (appState.hunters && appState.hunters[0]);
+        if (rewardHunterTitle) {
+          rewardHunterTitle.textContent = h ? `${(h.name || 'CAZADOR').toUpperCase()} (${h.totalPoints || 100} PTS)` : 'CAZADOR (100 PTS)';
+        }
+        [rewardCardOpt1, rewardCardOpt2, rewardCardOpt3].forEach(c => c && c.classList.remove('selected'));
+        if (rewardResolutionBox) rewardResolutionBox.style.display = 'none';
+        if (window.GantzAudio) window.GantzAudio.playScoreJingle();
+        break;
       case 'standby':
         viewStandby.style.display = 'flex';
         typewrite(standbyText, appState.broadcastMessage || 'LA HABÉIS PALMADO. AHORA VUESTRAS VIDAS ME PERTENECEN.');
@@ -487,6 +507,29 @@
           if (wpn.isRevealed && window.GantzAudio) window.GantzAudio.playScoreJingle();
           sendRemote({ type: 'WEAPONS_LIST_UPDATED', weapons: weaponsList });
         }
+        break;
+      }
+
+      case 'TRIGGER_100PTS_MENU': {
+        appState.rewardHunter = msg.hunter;
+        appState.rewardResolution = null;
+        setMode('100pts');
+        break;
+      }
+
+      case 'RESOLVE_100PTS_REWARD': {
+        const { option, title, body } = msg;
+        [rewardCardOpt1, rewardCardOpt2, rewardCardOpt3].forEach(c => c && c.classList.remove('selected'));
+        if (option === 1 && rewardCardOpt1) rewardCardOpt1.classList.add('selected');
+        if (option === 2 && rewardCardOpt2) rewardCardOpt2.classList.add('selected');
+        if (option === 3 && rewardCardOpt3) rewardCardOpt3.classList.add('selected');
+
+        if (rewardResolutionBox) {
+          rewardResolutionBox.style.display = 'block';
+          if (rewardResolutionTitle) rewardResolutionTitle.textContent = title || '¡DECISIÓN CONFIRMADA!';
+          if (rewardResolutionBody) rewardResolutionBody.textContent = body || 'PROCESANDO RECOMPENSA...';
+        }
+        if (window.GantzAudio) window.GantzAudio.playSphereBoot();
         break;
       }
 

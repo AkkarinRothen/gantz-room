@@ -1034,3 +1034,152 @@ body {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
 }
+
+/* 7. 100 POINTS REWARD MENU VIEW */
+.view-100pts {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 95%;
+  max-width: 580px;
+  animation: fadeIn 0.4s ease;
+}
+
+.menu-100pts-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  background: rgba(255, 215, 0, 0.03);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  box-shadow: 0 0 35px rgba(255, 215, 0, 0.15), inset 0 0 15px rgba(0,0,0,0.85);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.menu-100pts-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-bottom: 1px dashed rgba(255, 215, 0, 0.3);
+  padding-bottom: 8px;
+}
+
+.menu-100pts-badge {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: var(--gantz-gold);
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+.menu-100pts-hunter-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2.4vw, 1.4rem);
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 10px var(--gantz-green-glow);
+}
+
+.menu-100pts-instruction {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: #94a3b8;
+  letter-spacing: 1px;
+}
+
+.menu-100pts-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.reward-option-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: 6px;
+  padding: 10px 12px;
+  text-align: left;
+  transition: all 0.3s ease;
+}
+
+.reward-option-card.selected {
+  border-color: var(--gantz-gold);
+  background: rgba(255, 215, 0, 0.12);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+  transform: scale(1.02);
+}
+
+.reward-opt-num {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--gantz-cyan);
+  min-width: 28px;
+  text-align: center;
+  border-right: 1px solid rgba(0, 240, 255, 0.3);
+  padding-right: 8px;
+}
+
+.reward-option-card.selected .reward-opt-num {
+  color: var(--gantz-gold);
+  border-color: var(--gantz-gold);
+}
+
+.reward-opt-body {
+  flex: 1;
+}
+
+.reward-opt-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.reward-opt-desc {
+  font-size: 0.72rem;
+  color: #cbd5e1;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.reward-resolution-box {
+  background: rgba(0, 255, 102, 0.1);
+  border: 1px solid var(--gantz-green);
+  box-shadow: 0 0 20px rgba(0, 255, 102, 0.3);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  animation: pulseResolution 2s infinite;
+}
+
+@keyframes pulseResolution {
+  0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 102, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(0, 255, 102, 0.6); }
+}
+
+.reward-resolution-title {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: var(--gantz-gold);
+  letter-spacing: 2px;
+}
+
+.reward-resolution-body {
+  font-size: 0.82rem;
+  color: #fff;
+  margin-top: 4px;
+  letter-spacing: 1px;
+}

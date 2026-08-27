@@ -744,6 +744,8 @@
   }
 
   // 4. HUNTERS
+  let current100HunterIdx = null;
+
   function renderHunters() {
     huntersContainer.innerHTML = '';
     const hunters = appState?.hunters || [];
@@ -751,11 +753,20 @@
     hunters.forEach((h, idx) => {
       const card = document.createElement('div');
       card.className = 'hunter-card';
+      const status = h.status || 'alive';
+      const statusLabel = status === 'dead' ? '💀 MUERTO' : (status === 'liberated' ? '✨ LIBERADO' : '🟢 VIVO');
+      const statusColor = status === 'dead' ? '#ff003c' : (status === 'liberated' ? '#ffd700' : '#00ff66');
+
       card.innerHTML = `
         <div class="hunter-header-row">
-          <div>
-            <input type="text" class="hunter-name-input" value="${h.name}" onchange="updateHunterField(${idx}, 'name', this.value)">
-            <input type="text" class="hunter-nick-input" value="${h.nickname || 'Novato'}" onchange="updateHunterField(${idx}, 'nickname', this.value)" placeholder="Apodo Gantz...">
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="text" class="hunter-name-input" value="${escapeHtml(h.name)}" onchange="updateHunterField(${idx}, 'name', this.value)" style="flex: 1;">
+              <span class="btn btn-sm" onclick="toggleHunterStatus(${idx})" style="padding: 2px 6px; font-size: 0.68rem; background: rgba(0,0,0,0.6); border: 1px solid ${statusColor}; color: ${statusColor}; cursor: pointer;">
+                ${statusLabel}
+              </span>
+            </div>
+            <input type="text" class="hunter-nick-input" value="${escapeHtml(h.nickname || 'Novato')}" onchange="updateHunterField(${idx}, 'nickname', this.value)" placeholder="Apodo Gantz..." style="margin-top: 4px;">
           </div>
           <div class="hunter-points-badge">+${h.points || 0} pts</div>
         </div>
@@ -764,8 +775,11 @@
           <button class="btn btn-sm btn-primary" onclick="adjustHunterScore(${idx}, 1)">+1</button>
           <button class="btn btn-sm btn-cyan" onclick="adjustHunterScore(${idx}, 5)">+5</button>
           <button class="btn btn-sm btn-gold" onclick="adjustHunterScore(${idx}, 10)">+10</button>
+          <button class="btn btn-sm btn-gold" onclick="open100PtsModal(${idx})" title="Menú de 100 Puntos">
+            🏆 100 PTS
+          </button>
           <div style="flex: 1; text-align: right; font-size: 0.75rem; color: #94a3b8;">
-            Total: ${h.totalPoints || 0} pts
+            Total: <strong>${h.totalPoints || 0}</strong> pts
           </div>
           <button class="btn btn-sm btn-danger" onclick="removeHunter(${idx})">✕</button>
         </div>
@@ -773,6 +787,120 @@
       huntersContainer.appendChild(card);
     });
   }
+
+  window.toggleHunterStatus = function(idx) {
+    vibrate(25);
+    if (!appState || !appState.hunters || !appState.hunters[idx]) return;
+    const h = appState.hunters[idx];
+    if (h.status === 'alive' || !h.status) h.status = 'dead';
+    else if (h.status === 'dead') h.status = 'liberated';
+    else h.status = 'alive';
+    sendDisplay({ type: 'UPDATE_HUNTERS', hunters: appState.hunters });
+    renderHunters();
+  };
+
+  // ==================== 100 POINTS MODAL LOGIC ====================
+  const modal100Pts = document.getElementById('modal100Pts');
+  const modal100HunterName = document.getElementById('modal100HunterName');
+  const modal100HunterPoints = document.getElementById('modal100HunterPoints');
+  const select100Resurrect = document.getElementById('select100Resurrect');
+  const select100Weapon = document.getElementById('select100Weapon');
+
+  window.open100PtsModal = function(hunterIdx) {
+    vibrate(30);
+    if (!appState || !appState.hunters || !appState.hunters[hunterIdx]) return;
+    current100HunterIdx = hunterIdx;
+    const h = appState.hunters[hunterIdx];
+
+    if (modal100HunterName) modal100HunterName.textContent = h.name;
+    if (modal100HunterPoints) modal100HunterPoints.textContent = `Puntos Acumulados: ${h.totalPoints || 0} pts`;
+
+    // Populate dead hunters list
+    if (select100Resurrect) {
+      select100Resurrect.innerHTML = '';
+      const deadHunters = (appState.hunters || []).filter((dh, i) => i !== hunterIdx && dh.status === 'dead');
+      if (deadHunters.length === 0) {
+        select100Resurrect.innerHTML = '<option value="">(No hay compañeros caídos en la memoria)</option>';
+      } else {
+        deadHunters.forEach(dh => {
+          const opt = document.createElement('option');
+          opt.value = dh.id;
+          opt.textContent = `💀 ${dh.name} (${dh.nickname || 'Novato'})`;
+          select100Resurrect.appendChild(opt);
+        });
+      }
+    }
+
+    if (modal100Pts) modal100Pts.classList.add('active');
+  };
+
+  window.close100PtsModal = function() {
+    if (modal100Pts) modal100Pts.classList.remove('active');
+  };
+
+  window.project100PtsMenu = function() {
+    vibrate(40);
+    if (current100HunterIdx === null || !appState || !appState.hunters) return;
+    const h = appState.hunters[current100HunterIdx];
+    sendDisplay({ type: 'TRIGGER_100PTS_MENU', hunter: h });
+    log(`🏆 Menú de 100 Puntos Proyectado para ${h.name}`);
+  };
+
+  window.confirm100PtsReward = function() {
+    vibrate(50);
+    if (current100HunterIdx === null || !appState || !appState.hunters) return;
+    const h = appState.hunters[current100HunterIdx];
+    const choiceInput = document.querySelector('input[name="opt100Choice"]:checked');
+    const option = choiceInput ? parseInt(choiceInput.value, 10) : 1;
+
+    let resolutionTitle = '';
+    let resolutionBody = '';
+
+    if (option === 1) {
+      // 1. Borrar memoria y ser liberado
+      h.status = 'liberated';
+      h.totalPoints = Math.max(0, (h.totalPoints || 0) - 100);
+      h.points = 0;
+      resolutionTitle = `¡${h.name.toUpperCase()} HA ELEGIDO LA LIBERTAD!`;
+      resolutionBody = 'MEMORIA BORRADA // TRASLADO AL MUNDO REAL';
+    } else if (option === 2) {
+      // 2. Obtener un arma más potente
+      const weaponId = select100Weapon ? select100Weapon.value : 'wpn-zgun';
+      const wpn = weaponsList.find(w => w.id === weaponId) || { name: 'Super Arma' };
+      h.totalPoints = Math.max(0, (h.totalPoints || 0) - 100);
+      h.points = 0;
+      resolutionTitle = `¡${h.name.toUpperCase()} OBTIENE: ${wpn.name.toUpperCase()}!`;
+      resolutionBody = 'ARSENAL SUPERIOR DESBLOQUEADO EN EL RACK';
+    } else if (option === 3) {
+      // 3. Revivir a una persona
+      const deadHunterId = select100Resurrect ? select100Resurrect.value : null;
+      const deadHunter = (appState.hunters || []).find(dh => String(dh.id) === String(deadHunterId));
+      h.totalPoints = Math.max(0, (h.totalPoints || 0) - 100);
+      h.points = 0;
+
+      if (deadHunter) {
+        deadHunter.status = 'alive';
+        deadHunter.points = 0;
+        resolutionTitle = `¡RECONSTRUYENDO A ${deadHunter.name.toUpperCase()}!`;
+        resolutionBody = 'SÍNTESIS BIOLÓGICA COMPLETADA // VUELVE AL JUEGO';
+      } else {
+        resolutionTitle = '¡RECONSTRUCCIÓN DE MEMORIA EJECUTADA!';
+        resolutionBody = 'SUJETO RESTAURADO EN LA SALA';
+      }
+    }
+
+    sendDisplay({ type: 'UPDATE_HUNTERS', hunters: appState.hunters });
+    sendDisplay({
+      type: 'RESOLVE_100PTS_REWARD',
+      option,
+      title: resolutionTitle,
+      body: resolutionBody
+    });
+
+    renderHunters();
+    close100PtsModal();
+    log(`✨ Recompensa de 100 Puntos otorgada a ${h.name}: Opción ${option}`);
+  };
 
   window.adjustHunterScore = function(index, delta) {
     vibrate(25);
