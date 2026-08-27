@@ -10,104 +10,117 @@
   const roomConnectOverlay = document.getElementById('roomConnectOverlay');
   const roomPinInput = document.getElementById('roomPinInput');
   const btnConnectRoom = document.getElementById('btnConnectRoom');
+  const btnPastePin = document.getElementById('btnPastePin');
+  const connectFeedback = document.getElementById('connectFeedback');
 
-  const syncDot = document.getElementById('syncDot');
-  const syncText = document.getElementById('syncText');
-  const headerTimer = document.getElementById('headerTimer');
-  const mainTimerDisplay = document.getElementById('mainTimerDisplay');
-  const timerStatusLabel = document.getElementById('timerStatusLabel');
-  const timerBox = document.getElementById('timerBox');
-  const btnPlayPause = document.getElementById('btnPlayPause');
-  const playIcon = document.getElementById('playIcon');
-  const playText = document.getElementById('playText');
-  const btnResetTimer = document.getElementById('btnResetTimer');
+  let broadcastChan = null;
 
-  const monstersContainer = document.getElementById('monstersContainer');
-  const btnNewAlien = document.getElementById('btnNewAlien');
-  const alienModal = document.getElementById('alienModal');
-  const alienForm = document.getElementById('alienForm');
-  const alienModalTitle = document.getElementById('alienModalTitle');
-
-  const huntersContainer = document.getElementById('huntersContainer');
-  const btnAddHunter = document.getElementById('btnAddHunter');
-  const btnBroadcastScoring = document.getElementById('btnBroadcastScoring');
-
-  const customMsgInput = document.getElementById('customMsgInput');
-  const btnSendCustomMsg = document.getElementById('btnSendCustomMsg');
-
-  function formatTime(totalSec) {
-    const mins = Math.floor(totalSec / 60);
-    const secs = totalSec % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  }
-
-  function vibrate(ms = 30) {
-    if ('vibrate' in navigator) {
-      try { navigator.vibrate(ms); } catch (e) {}
+  function showFeedback(msg, color = '#ffd700') {
+    if (connectFeedback) {
+      connectFeedback.textContent = msg;
+      connectFeedback.style.color = color;
+      connectFeedback.style.display = 'block';
     }
   }
-
-  // Tab switching
-  window.switchTab = function(tabId) {
-    vibrate(15);
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-
-    const targetPanel = document.getElementById(tabId);
-    if (targetPanel) targetPanel.classList.add('active');
-
-    const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => 
-      b.getAttribute('onclick')?.includes(tabId)
-    );
-    if (activeBtn) activeBtn.classList.add('active');
-  };
 
   // PeerJS Connection Setup
   function connectToRoom(targetRoomId) {
-    roomId = targetRoomId.trim().toLowerCase();
+    let clean = targetRoomId.trim().toUpperCase();
+    if (!clean) return;
+
+    // Normalize room ID: if user types "38VH", turn it into "gantz-38vh"
+    let peerTarget = clean.toLowerCase();
+    if (!peerTarget.startsWith('gantz-')) {
+      peerTarget = 'gantz-' + peerTarget;
+    }
+    roomId = peerTarget;
+
     syncText.textContent = 'CONECTANDO...';
     syncDot.style.background = '#ffd700';
+    showFeedback('⚡ Conectando con la sala ' + clean + '...');
 
-    if (!peer) {
-      peer = new Peer();
+    // 1. Try BroadcastChannel for 0ms local preview sync
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        if (!broadcastChan) {
+          broadcastChan = new BroadcastChannel('gantz_sync_channel');
+          broadcastChan.onmessage = (event) => {
+            handleServerMessage(event.data);
+          };
+        }
+        // Send request sync
+        broadcastChan.postMessage({ type: 'REQUEST_SYNC', targetRoom: roomId });
+        setTimeout(() => {
+          if (appState) {
+            syncDot.style.background = '#00ff66';
+            syncDot.style.boxShadow = '0 0 8px #00ff66';
+            syncText.textContent = 'CONECTADO';
+            syncText.style.color = '#00ff66';
+            roomConnectOverlay.style.display = 'none';
+          }
+        }, 150);
+      }
+    } catch (e) {}
+
+    // 2. Connect via PeerJS WebRTC
+    try {
+      if (!peer) {
+        peer = new Peer();
+      }
+
+      function doPeerConnect() {
+        console.log('Peer ready, connecting to display room:', roomId);
+        conn = peer.connect(roomId, { reliable: true });
+
+        conn.on('open', () => {
+          console.log('WebRTC Connection established with Display!');
+          syncDot.style.background = '#00ff66';
+          syncDot.style.boxShadow = '0 0 8px #00ff66';
+          syncText.textContent = 'CONECTADO';
+          syncText.style.color = '#00ff66';
+          roomConnectOverlay.style.display = 'none';
+          conn.send({ type: 'REQUEST_SYNC' });
+        });
+
+        conn.on('data', (data) => {
+          handleServerMessage(data);
+        });
+
+        conn.on('close', () => {
+          console.warn('Connection closed');
+          syncDot.style.background = '#ff003c';
+          syncDot.style.boxShadow = 'none';
+          syncText.textContent = 'DESCONECTADO';
+          syncText.style.color = '#ff003c';
+        });
+      }
+
+      if (peer.open) {
+        doPeerConnect();
+      } else {
+        peer.on('open', () => {
+          doPeerConnect();
+        });
+      }
+
+      peer.on('error', (err) => {
+        console.warn('Peer error:', err);
+        if (!appState) {
+          showFeedback('⚠️ No se encontró la sala ' + clean + '. Verifica el código.', '#ff003c');
+        }
+      });
+    } catch (err) {
+      console.warn('Peer error:', err);
     }
-
-    peer.on('open', () => {
-      console.log('Peer ready, connecting to display room:', roomId);
-      conn = peer.connect(roomId, { reliable: true });
-
-      conn.on('open', () => {
-        console.log('WebRTC Connection established with Display!');
-        syncDot.style.background = '#00ff66';
-        syncDot.style.boxShadow = '0 0 8px #00ff66';
-        syncText.textContent = 'CONECTADO';
-        syncText.style.color = '#00ff66';
-        roomConnectOverlay.style.display = 'none';
-      });
-
-      conn.on('data', (data) => {
-        handleServerMessage(data);
-      });
-
-      conn.on('close', () => {
-        console.warn('Connection closed');
-        syncDot.style.background = '#ff003c';
-        syncDot.style.boxShadow = 'none';
-        syncText.textContent = 'DESCONECTADO';
-        syncText.style.color = '#ff003c';
-      });
-    });
-
-    peer.on('error', (err) => {
-      console.error('Peer error:', err);
-      syncText.textContent = 'ERROR DE SALA';
-      syncDot.style.background = '#ff003c';
-    });
   }
 
   function sendDisplay(data) {
+    data.targetRoom = roomId;
     if (conn && conn.open) {
       conn.send(data);
+    }
+    if (broadcastChan) {
+      try { broadcastChan.postMessage(data); } catch (e) {}
     }
   }
 
@@ -415,4 +428,27 @@
       connectToRoom(inputPin);
     }
   });
+
+  roomPinInput.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+      const inputPin = roomPinInput.value.trim();
+      if (inputPin) connectToRoom(inputPin);
+    }
+  });
+
+  if (btnPastePin) {
+    btnPastePin.addEventListener('click', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          roomPinInput.value = text.trim();
+          connectToRoom(text.trim());
+        }
+      } catch (err) {
+        // Fallback: focus input
+        roomPinInput.focus();
+        showFeedback('Presiona CTRL+V para pegar');
+      }
+    });
+  }
 })();

@@ -27,11 +27,11 @@
         <span class="status-dot"></span>
         <span id="hudStatusText">STANDBY</span>
       </div>
-      <div class="room-pin-badge" id="hudRoomPin" title="Clic para ver código QR y PIN">SALA: GENERANDO...</div>
+      <div class="room-pin-badge" id="hudRoomPin" title="Clic para ver o copiar PIN">SALA: GENERANDO...</div>
     </div>
     <div class="hud-right">
       <button class="hud-btn" id="btnAudioToggle" title="Activar/Silenciar Efectos de Sonido">🔊 AUDIO ON</button>
-      <button class="hud-btn" id="btnOpenQR">📱 CONECTAR TABLET (QR)</button>
+      <button class="hud-btn" id="btnOpenQR">📱 CONECTAR TABLET (QR / PIN)</button>
     </div>
   </header>
 
@@ -130,11 +130,17 @@
       <div class="qr-card-title">CONECTAR <span>TABLET / CELULAR</span></div>
       <p style="font-size: 0.85rem; color: #94a3b8;">Escanea con la cámara de tu tablet o usa el PIN de la sala:</p>
       
-      <div class="qr-pin-display" id="qrPinDisplay">GANTZ-XXXX</div>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0;">
+        <div class="qr-pin-display" id="qrPinDisplay" style="margin: 0;">GANTZ-XXXX</div>
+        <button class="hud-btn" id="btnCopyPin" style="padding: 8px 12px; font-size: 0.85rem;" title="Copiar código PIN">📋 COPIAR PIN</button>
+      </div>
 
       <div class="qr-image-container" id="qrContainer"></div>
 
-      <div class="qr-url-text" id="qrUrlText">https://tu-sitio.vercel.app/remote.html?room=...</div>
+      <div style="display: flex; gap: 6px; margin-top: 10px;">
+        <div class="qr-url-text" id="qrUrlText" style="flex: 1; margin-top: 0;">https://tu-sitio.vercel.app/remote.html?room=...</div>
+        <button class="hud-btn" id="btnCopyUrl" style="padding: 6px 10px; font-size: 0.75rem;" title="Copiar enlace completo">📋</button>
+      </div>
       <button class="qr-close-btn" id="btnCloseQR">CERRAR</button>
     </div>
   </div>

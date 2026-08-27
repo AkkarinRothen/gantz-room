@@ -61,8 +61,12 @@
   const qrUrlText = document.getElementById('qrUrlText');
   const btnOpenQR = document.getElementById('btnOpenQR');
   const btnCloseQR = document.getElementById('btnCloseQR');
+  const btnCopyPin = document.getElementById('btnCopyPin');
+  const btnCopyUrl = document.getElementById('btnCopyUrl');
   const btnAudioToggle = document.getElementById('btnAudioToggle');
   const audioUnlockOverlay = document.getElementById('audioUnlockOverlay');
+
+  let broadcastChan = null;
 
   // Load saved state if any
   try {
@@ -78,6 +82,42 @@
     try {
       localStorage.setItem('gantz_cloud_state', JSON.stringify(appState));
     } catch (e) {}
+  }
+
+  // Copy helper with feedback
+  function copyToClipboard(text, element, successMsg = '¡COPIADO!') {
+    navigator.clipboard.writeText(text).then(() => {
+      const origText = element.textContent;
+      element.textContent = successMsg;
+      element.style.borderColor = '#00ff66';
+      element.style.color = '#00ff66';
+      setTimeout(() => {
+        element.textContent = origText;
+        element.style.borderColor = '';
+        element.style.color = '';
+      }, 1500);
+    }).catch(() => {
+      // Fallback
+      prompt('Copia este código manualmente:', text);
+    });
+  }
+
+  if (btnCopyPin) {
+    btnCopyPin.addEventListener('click', () => {
+      copyToClipboard(roomId, btnCopyPin, '✓ ¡PIN COPIADO!');
+    });
+  }
+
+  if (btnCopyUrl) {
+    btnCopyUrl.addEventListener('click', () => {
+      copyToClipboard(qrUrlText.textContent, btnCopyUrl, '✓');
+    });
+  }
+
+  if (hudRoomPin) {
+    hudRoomPin.addEventListener('click', () => {
+      qrModal.classList.add('active');
+    });
   }
 
   // Audio unlock listener
@@ -294,11 +334,23 @@
     if (activeConn && activeConn.open) {
       activeConn.send(msg);
     }
+    if (broadcastChan) {
+      try { broadcastChan.postMessage(msg); } catch (e) {}
+    }
   }
 
   // Handle messages from Remote tablet
   function handleRemoteMessage(msg) {
     switch (msg.type) {
+      case 'REQUEST_SYNC':
+        sendRemote({
+          type: 'SYNC_STATE',
+          state: appState,
+          aliens: aliensList,
+          roomId: roomId
+        });
+        break;
+
       case 'SET_MODE':
         setMode(msg.mode);
         break;
@@ -363,7 +415,7 @@
     }
   }
 
-  // Initialize PeerJS Cloud WebRTC Connection
+  // Initialize PeerJS Cloud WebRTC + Local BroadcastChannel
   function initPeerJS() {
     roomId = generateRoomId();
     hudRoomPin.textContent = `SALA: ${roomId}`;
@@ -377,51 +429,70 @@
     qrUrlText.textContent = remoteUrl;
     renderQRCode(remoteUrl);
 
-    // Create Peer
-    peer = new Peer(roomId.toLowerCase());
-
-    peer.on('open', (id) => {
-      console.log('Gantz Peer Room ready:', id);
-      hudStatusBadge.style.borderColor = '#00ff66';
-      hudStatusBadge.style.color = '#00ff66';
-    });
-
-    peer.on('connection', (conn) => {
-      activeConn = conn;
-      console.log('Tablet Remote connected via WebRTC!');
-
-      conn.on('open', () => {
-        hudStatusBadge.style.borderColor = '#00f0ff';
-        hudStatusBadge.style.color = '#00f0ff';
-        hudStatusText.textContent = 'TABLET CONECTADA';
-        // Send initial state to tablet
-        conn.send({
-          type: 'SYNC_STATE',
-          state: appState,
-          aliens: aliensList,
-          roomId: roomId
-        });
-        if (window.GantzAudio) window.GantzAudio.playClick();
-      });
-
-      conn.on('data', (data) => {
-        handleRemoteMessage(data);
-      });
-
-      conn.on('close', () => {
-        hudStatusBadge.style.borderColor = '#ff003c';
-        hudStatusBadge.style.color = '#ff003c';
-        hudStatusText.textContent = 'STANDBY';
-      });
-    });
-
-    peer.on('error', (err) => {
-      console.warn('Peer error:', err);
-      if (err.type === 'unavailable-id') {
-        // Retry with another ID
-        setTimeout(initPeerJS, 1000);
+    // Setup BroadcastChannel for 0ms same-origin tab preview
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        broadcastChan = new BroadcastChannel('gantz_sync_channel');
+        broadcastChan.onmessage = (event) => {
+          const msg = event.data;
+          if (msg && msg.targetRoom) {
+            const target = msg.targetRoom.toUpperCase().trim();
+            const cleanTarget = target.startsWith('GANTZ-') ? target : `GANTZ-${target}`;
+            if (cleanTarget !== roomId) return;
+          }
+          handleRemoteMessage(msg);
+        };
       }
-    });
+    } catch (e) {}
+
+    // Create Peer
+    try {
+      peer = new Peer(roomId.toLowerCase());
+
+      peer.on('open', (id) => {
+        console.log('Gantz Peer Room ready:', id);
+        hudStatusBadge.style.borderColor = '#00ff66';
+        hudStatusBadge.style.color = '#00ff66';
+      });
+
+      peer.on('connection', (conn) => {
+        activeConn = conn;
+        console.log('Tablet Remote connected via WebRTC!');
+
+        conn.on('open', () => {
+          hudStatusBadge.style.borderColor = '#00f0ff';
+          hudStatusBadge.style.color = '#00f0ff';
+          hudStatusText.textContent = 'TABLET CONECTADA';
+          // Send initial state to tablet
+          conn.send({
+            type: 'SYNC_STATE',
+            state: appState,
+            aliens: aliensList,
+            roomId: roomId
+          });
+          if (window.GantzAudio) window.GantzAudio.playClick();
+        });
+
+        conn.on('data', (data) => {
+          handleRemoteMessage(data);
+        });
+
+        conn.on('close', () => {
+          hudStatusBadge.style.borderColor = '#ff003c';
+          hudStatusBadge.style.color = '#ff003c';
+          hudStatusText.textContent = 'STANDBY';
+        });
+      });
+
+      peer.on('error', (err) => {
+        console.warn('Peer error:', err);
+        if (err.type === 'unavailable-id') {
+          setTimeout(initPeerJS, 1000);
+        }
+      });
+    } catch (err) {
+      console.warn('Peer init warning:', err);
+    }
   }
 
   // Boot

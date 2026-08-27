@@ -15,13 +15,20 @@
   <div class="room-connect-overlay" id="roomConnectOverlay">
     <div class="room-connect-box">
       <div class="room-connect-title">CONECTAR A <span>SALA GANTZ</span></div>
-      <p style="font-size: 0.8rem; color: #94a3b8;">Ingresa el código PIN que aparece en la pantalla principal:</p>
+      <p style="font-size: 0.8rem; color: #94a3b8;">Ingresa el código PIN (ej: <strong>38VH</strong> o <strong>GANTZ-38VH</strong>):</p>
       
-      <input type="text" class="room-pin-input" id="roomPinInput" placeholder="GANTZ-XXXX" maxlength="12">
+      <input type="text" class="room-pin-input" id="roomPinInput" placeholder="Ej: 38VH" maxlength="15" autocomplete="off" autofocus>
       
+      <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+        <button type="button" class="btn btn-cyan" id="btnPastePin" style="flex: 1; font-size: 0.8rem; padding: 8px;">
+          📋 PEGAR PIN
+        </button>
+      </div>
+
       <button class="btn btn-primary" id="btnConnectRoom" style="width: 100%;">
         ⚡ VINCULAR CON LA ESFERA
       </button>
+      <div id="connectFeedback" style="margin-top: 10px; font-size: 0.75rem; color: #ffd700; display: none;"></div>
     </div>
   </div>
 
