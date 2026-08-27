@@ -213,39 +213,49 @@
       <form id="alienForm">
         <input type="hidden" id="alienFormId">
         
+        <!-- Live Image Preview & Dual Selector -->
+        <div class="form-group" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0,240,255,0.2); border-radius: 8px; padding: 12px; text-align: center;">
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <img id="alienPreviewImg" src="assets/aliens/alien_negi.jpg" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #00ff66; box-shadow: 0 0 10px rgba(0,255,102,0.3); background: #000;">
+            <div style="flex: 1; text-align: left;">
+              <input type="file" id="alienFileInput" accept="image/*" style="display: none;">
+              <button type="button" class="btn btn-primary btn-sm" id="btnUploadAlienFile" style="width: 100%; margin-bottom: 6px;">
+                📁 SUBIR DESDE MI DISPOSITIVO
+              </button>
+              <div style="font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px;">O ingresa una URL web / ruta:</div>
+              <input type="text" class="form-input" id="alienFormImage" value="assets/aliens/alien_negi.jpg" placeholder="https://ejemplo.com/alien.jpg" style="padding: 4px 8px; font-size: 0.8rem;">
+            </div>
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Nombre del Objetivo / Alien</label>
-          <input type="text" class="form-input" id="alienFormName" required placeholder="Ej: Alien Cebollín (Adulto)">
+          <input type="text" class="form-input" id="alienFormName" required placeholder="Ej: Alien Cebollín (Junior)">
         </div>
 
         <div class="form-group">
           <label class="form-label">Categoría / Misión</label>
-          <input type="text" class="form-input" id="alienFormCat" placeholder="Ej: Misión 01 - Boss">
+          <input type="text" class="form-input" id="alienFormCat" placeholder="Ej: Misión Inicial">
         </div>
 
         <div class="form-group">
           <label class="form-label">Puntos de Recompensa</label>
-          <input type="number" class="form-input" id="alienFormPoints" value="5" min="0" max="100">
+          <input type="number" class="form-input" id="alienFormPoints" value="1" min="0" max="100">
         </div>
 
         <div class="form-group">
-          <label class="form-label">Frase / Cita de Gantz</label>
-          <input type="text" class="form-input" id="alienFormQuote" placeholder="Ej: '¡¡¡HABÉIS MATADO A MI HIJO!!!'">
+          <label class="form-label">💚 Le gusta (Estilo Gantz)</label>
+          <input type="text" class="form-input" id="alienFormLikes" placeholder="Ej: Las cebolletas frescas y estar escondido">
         </div>
 
         <div class="form-group">
-          <label class="form-label">Imagen (Ruta local o URL)</label>
-          <input type="text" class="form-input" id="alienFormImage" value="assets/aliens/alien_negi.jpg">
+          <label class="form-label">💬 Frase / Cita de Gantz</label>
+          <input type="text" class="form-input" id="alienFormQuote" placeholder="Ej: '¡Te doy cebollín... dame cebollín...!'">
         </div>
 
         <div class="form-group">
-          <label class="form-label">Descripción Táctica</label>
-          <textarea class="form-textarea" id="alienFormDesc" rows="2" placeholder="Detalles de la criatura..."></textarea>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Punto Débil / Regla Especial</label>
-          <input type="text" class="form-input" id="alienFormWeakness" placeholder="Ej: Vulnerable a la sobrecarga del traje">
+          <label class="form-label">👁️ Características / Rasgos Curiosos</label>
+          <textarea class="form-textarea" id="alienFormTraits" rows="2" placeholder="Ej: Pequeño, verde, viscoso y muy llorón"></textarea>
         </div>
 
         <div class="btn-grid-2" style="margin-top: 16px;">

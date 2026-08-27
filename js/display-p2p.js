@@ -48,7 +48,8 @@
   const briefingImg = document.getElementById('briefingImg');
   const briefingName = document.getElementById('briefingName');
   const briefingQuote = document.getElementById('briefingQuote');
-  const briefingDesc = document.getElementById('briefingDesc');
+  const briefingLikes = document.getElementById('briefingLikes');
+  const briefingTraits = document.getElementById('briefingTraits');
   const briefingPoints = document.getElementById('briefingPoints');
 
   const viewScoring = document.getElementById('viewScoring');
@@ -245,8 +246,9 @@
           briefingImg.src = alien.image || 'assets/aliens/alien_negi.jpg';
           briefingName.textContent = alien.name;
           briefingQuote.textContent = alien.quote ? `"${alien.quote}"` : '...';
-          briefingDesc.textContent = `${alien.description || ''} ${alien.weakness ? `[Debilidad: ${alien.weakness}]` : ''}`;
-          briefingPoints.textContent = `RECOMPENSA: ${alien.points || 0} PTOS`;
+          if (briefingLikes) briefingLikes.textContent = alien.likes || 'Las cosas raras';
+          if (briefingTraits) briefingTraits.textContent = alien.traits || alien.description || 'Poco amigable';
+          if (briefingPoints) briefingPoints.textContent = `RECOMPENSA: ${alien.points || 0} PTO${alien.points === 1 ? '' : 'S'}`;
         }
         if (window.GantzAudio) window.GantzAudio.playSphereBoot();
         break;

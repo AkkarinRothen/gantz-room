@@ -332,7 +332,66 @@
     sendDisplay({ type: 'TIMER_CONTROL', action: 'set', seconds });
   };
 
-  // 2. MONSTERS
+  // 2. MONSTERS & IMAGE PICKER
+  const alienFileInput = document.getElementById('alienFileInput');
+  const btnUploadAlienFile = document.getElementById('btnUploadAlienFile');
+  const alienPreviewImg = document.getElementById('alienPreviewImg');
+  const alienFormImage = document.getElementById('alienFormImage');
+
+  if (btnUploadAlienFile && alienFileInput) {
+    btnUploadAlienFile.addEventListener('click', () => {
+      alienFileInput.click();
+    });
+
+    alienFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const maxDimension = 500;
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxDimension) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            }
+          } else {
+            if (height > maxDimension) {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const base64Url = canvas.toDataURL('image/jpeg', 0.82);
+          alienFormImage.value = base64Url;
+          if (alienPreviewImg) alienPreviewImg.src = base64Url;
+          log('✓ Imagen local cargada y optimizada para transferencia');
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (alienFormImage) {
+    alienFormImage.addEventListener('input', () => {
+      const val = alienFormImage.value.trim();
+      if (val && alienPreviewImg) {
+        alienPreviewImg.src = val;
+      }
+    });
+  }
+
   function renderMonsters() {
     monstersContainer.innerHTML = '';
     const currentId = appState?.currentAlien?.id;
@@ -349,6 +408,7 @@
             <span>🏆 ${alien.points || 0} pts</span>
             <span>🏷️ ${alien.category || 'Misión'}</span>
           </div>
+          <div style="font-size: 0.72rem; color: #00ff66; margin-top: 2px;">💚 Le gusta: ${alien.likes || 'Las cebolletas'}</div>
           <div class="monster-quote">${alien.quote ? `"${alien.quote}"` : ''}</div>
         </div>
         <div class="monster-actions">
@@ -381,10 +441,11 @@
     document.getElementById('alienFormName').value = alien.name || '';
     document.getElementById('alienFormCat').value = alien.category || '';
     document.getElementById('alienFormPoints').value = alien.points || 0;
+    document.getElementById('alienFormLikes').value = alien.likes || '';
     document.getElementById('alienFormQuote').value = alien.quote || '';
+    document.getElementById('alienFormTraits').value = alien.traits || alien.description || '';
     document.getElementById('alienFormImage').value = alien.image || '';
-    document.getElementById('alienFormDesc').value = alien.description || '';
-    document.getElementById('alienFormWeakness').value = alien.weakness || '';
+    if (alienPreviewImg) alienPreviewImg.src = alien.image || 'assets/aliens/alien_negi.jpg';
 
     alienModalTitle.textContent = '✏️ EDITAR OBJETIVO';
     alienModal.classList.add('active');
@@ -395,6 +456,7 @@
     alienForm.reset();
     document.getElementById('alienFormId').value = 'alien-' + Date.now();
     document.getElementById('alienFormImage').value = 'assets/aliens/alien_negi.jpg';
+    if (alienPreviewImg) alienPreviewImg.src = 'assets/aliens/alien_negi.jpg';
     alienModalTitle.textContent = '👾 CREAR NUEVO ALIEN';
     alienModal.classList.add('active');
   });
@@ -410,14 +472,22 @@
     const newAlien = {
       id,
       name: document.getElementById('alienFormName').value,
-      category: document.getElementById('alienFormCat').value,
+      category: document.getElementById('alienFormCat').value || 'Misión',
       points: parseInt(document.getElementById('alienFormPoints').value, 10) || 0,
-      quote: document.getElementById('alienFormQuote').value,
-      image: document.getElementById('alienFormImage').value,
-      description: document.getElementById('alienFormDesc').value,
-      weakness: document.getElementById('alienFormWeakness').value
+      likes: document.getElementById('alienFormLikes').value || 'Las cosas raras',
+      quote: document.getElementById('alienFormQuote').value || '...',
+      traits: document.getElementById('alienFormTraits').value || 'Sin clasificar',
+      image: document.getElementById('alienFormImage').value || 'assets/aliens/alien_negi.jpg'
     };
 
+    const idx = aliensList.findIndex(a => a.id === id);
+    if (idx >= 0) aliensList[idx] = newAlien;
+    else aliensList.push(newAlien);
+
+    if (appState && appState.currentAlien && appState.currentAlien.id === id) {
+      appState.currentAlien = newAlien;
+    }
+    renderMonsters();
     sendDisplay({ type: 'SAVE_ALIEN', alien: newAlien });
     closeAlienModal();
   });
