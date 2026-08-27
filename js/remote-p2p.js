@@ -1466,13 +1466,34 @@
     if (modal) modal.classList.remove('active');
   }
 
+  window.onUpdateDownloadProgress = function(percent) {
+    const progressWrap = document.getElementById('updateDownloadProgressWrap');
+    const statusText = document.getElementById('updateProgressStatusText');
+    const pBar = document.getElementById('updateProgressBar');
+    const pPercent = document.getElementById('updateProgressPercent');
+
+    if (progressWrap) progressWrap.style.display = 'block';
+    if (pBar) pBar.style.width = percent + '%';
+    if (pPercent) pPercent.textContent = percent + '%';
+
+    if (percent >= 100) {
+      if (statusText) statusText.textContent = '✓ DESCARGA COMPLETADA. ABRIENDO INSTALADOR...';
+    } else {
+      if (statusText) statusText.textContent = `DESCARGANDO ACTUALIZACIÓN (${percent}%)...`;
+    }
+  };
+
   const btnInstallApkDirect = document.getElementById('btnInstallApkDirect');
   if (btnInstallApkDirect) {
     btnInstallApkDirect.addEventListener('click', () => {
       vibrate(40);
-      const apkUrl = (latestAvailableVersion && latestAvailableVersion.apkUrl)
+      let apkUrl = (latestAvailableVersion && latestAvailableVersion.apkUrl)
         ? latestAvailableVersion.apkUrl
         : 'https://akkarinrothen.github.io/gantz-room/assets/apk/gantz-remote.apk';
+
+      if (!apkUrl.startsWith('http://') && !apkUrl.startsWith('https://')) {
+        apkUrl = 'https://akkarinrothen.github.io/gantz-room/' + apkUrl.replace(/^\//, '');
+      }
 
       const progressWrap = document.getElementById('updateDownloadProgressWrap');
       const statusText = document.getElementById('updateProgressStatusText');
@@ -1480,18 +1501,13 @@
       const pPercent = document.getElementById('updateProgressPercent');
 
       if (progressWrap) progressWrap.style.display = 'block';
-      if (statusText) statusText.textContent = 'INICIANDO DESCARGA NATIVA...';
-      if (pBar) pBar.style.width = '35%';
-      if (pPercent) pPercent.textContent = '35%';
+      if (statusText) statusText.textContent = 'CONECTANDO CON EL SERVIDOR...';
+      if (pBar) pBar.style.width = '5%';
+      if (pPercent) pPercent.textContent = '5%';
 
       if (window.AndroidBridge && typeof window.AndroidBridge.downloadAndInstallApk === 'function') {
         try {
           window.AndroidBridge.downloadAndInstallApk(apkUrl);
-          setTimeout(() => {
-            if (pBar) pBar.style.width = '85%';
-            if (pPercent) pPercent.textContent = '85%';
-            if (statusText) statusText.textContent = 'ABRIENDO INSTALADOR DE ANDROID...';
-          }, 1200);
         } catch (e) {
           logError('Fallo al invocar instalador nativo:', e);
           window.open(apkUrl, '_blank');
