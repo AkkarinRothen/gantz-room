@@ -177,6 +177,9 @@
     }
     roomId = peerTarget;
 
+    // Save to Saved / Recent Rooms
+    saveRoom(clean);
+
     if (window.GantzLogger) {
       window.GantzLogger.updateState('roomId', clean);
     }
@@ -737,8 +740,242 @@
     if (roomId) connectToRoom(roomId);
   };
 
+  // ==================== SAVED & FAVORITE ROOMS MANAGER ====================
+  const STORAGE_ROOMS_KEY = 'gantz_saved_rooms';
+
+  function getSavedRooms() {
+    try {
+      const data = localStorage.getItem(STORAGE_ROOMS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveRoom(pin, label = '') {
+    const cleanPin = pin.trim().toUpperCase().replace(/^GANTZ-/, '');
+    if (!cleanPin) return;
+
+    let rooms = getSavedRooms();
+    const existingIndex = rooms.findIndex(r => r.pin === cleanPin);
+
+    if (existingIndex >= 0) {
+      rooms[existingIndex].lastUsed = Date.now();
+      if (label) rooms[existingIndex].label = label;
+    } else {
+      rooms.unshift({
+        pin: cleanPin,
+        label: label || `Sala ${cleanPin}`,
+        lastUsed: Date.now(),
+        isFavorite: false
+      });
+    }
+
+    // Sort: favorites first, then by lastUsed desc
+    rooms.sort((a, b) => {
+      if (a.isFavorite && !b.isFavorite) return -1;
+      if (!a.isFavorite && b.isFavorite) return 1;
+      return b.lastUsed - a.lastUsed;
+    });
+
+    try {
+      localStorage.setItem(STORAGE_ROOMS_KEY, JSON.stringify(rooms));
+    } catch (e) {}
+
+    renderSavedRooms();
+  }
+
+  window.toggleFavoriteRoom = function(pin, event) {
+    if (event) event.stopPropagation();
+    let rooms = getSavedRooms();
+    const room = rooms.find(r => r.pin === pin);
+    if (room) {
+      room.isFavorite = !room.isFavorite;
+      localStorage.setItem(STORAGE_ROOMS_KEY, JSON.stringify(rooms));
+      renderSavedRooms();
+    }
+  };
+
+  window.deleteSavedRoom = function(pin, event) {
+    if (event) event.stopPropagation();
+    let rooms = getSavedRooms().filter(r => r.pin !== pin);
+    localStorage.setItem(STORAGE_ROOMS_KEY, JSON.stringify(rooms));
+    renderSavedRooms();
+  };
+
+  window.renameSavedRoom = function(pin, event) {
+    if (event) event.stopPropagation();
+    let rooms = getSavedRooms();
+    const room = rooms.find(r => r.pin === pin);
+    if (!room) return;
+
+    const newLabel = prompt('Ingresa un nombre para esta sala:', room.label);
+    if (newLabel && newLabel.trim()) {
+      room.label = newLabel.trim();
+      localStorage.setItem(STORAGE_ROOMS_KEY, JSON.stringify(rooms));
+      renderSavedRooms();
+    }
+  };
+
+  function renderSavedRooms() {
+    const container = document.getElementById('savedRoomsContainer');
+    const countEl = document.getElementById('savedRoomsCount');
+    if (!container) return;
+
+    const rooms = getSavedRooms();
+    if (countEl) countEl.textContent = `${rooms.length} sala${rooms.length === 1 ? '' : 's'}`;
+
+    if (rooms.length === 0) {
+      container.innerHTML = '<div style="font-size: 0.75rem; color: #64748b; font-style: italic; text-align: center; padding: 10px;">No hay salas guardadas aún</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    rooms.forEach(r => {
+      const timeStr = formatRelativeTime(r.lastUsed);
+      const item = document.createElement('div');
+      item.className = `saved-room-item ${r.isFavorite ? 'is-fav' : ''}`;
+      item.innerHTML = `
+        <div style="flex: 1; cursor: pointer; display: flex; flex-direction: column; text-align: left;" onclick="connectToRoom('${r.pin}')">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="saved-room-pin">${r.pin}</span>
+            <span class="saved-room-name">${escapeHtml(r.label)}</span>
+          </div>
+          <span class="saved-room-time">${timeStr}</span>
+        </div>
+        <div class="saved-room-actions">
+          <button class="btn-icon-fav ${r.isFavorite ? 'active' : ''}" onclick="toggleFavoriteRoom('${r.pin}', event)" title="Favorito">
+            ${r.isFavorite ? '⭐' : '☆'}
+          </button>
+          <button class="btn btn-sm btn-cyan" style="padding: 4px 8px; font-size: 0.75rem;" onclick="connectToRoom('${r.pin}')">
+            Entrar
+          </button>
+          <button class="btn btn-sm" style="padding: 4px 6px; font-size: 0.75rem;" onclick="renameSavedRoom('${r.pin}', event)" title="Renombrar">
+            ✏️
+          </button>
+          <button class="btn btn-sm btn-danger" style="padding: 4px 6px; font-size: 0.75rem;" onclick="deleteSavedRoom('${r.pin}', event)" title="Eliminar">
+            ✕
+          </button>
+        </div>
+      `;
+      container.appendChild(item);
+    });
+  }
+
+  function formatRelativeTime(timestamp) {
+    if (!timestamp) return '';
+    const diffMs = Date.now() - timestamp;
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'Reciente';
+    if (diffMin < 60) return `Hace ${diffMin} min`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `Hace ${diffHours} h`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `Hace ${diffDays} d`;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ==================== CAMERA QR SCANNER ====================
+  let html5QrScanner = null;
+  const btnOpenQrScanner = document.getElementById('btnOpenQrScanner');
+  const btnCloseQrScanner = document.getElementById('btnCloseQrScanner');
+  const qrScannerModal = document.getElementById('qrScannerModal');
+  const qrScanStatus = document.getElementById('qrScanStatus');
+
+  if (btnOpenQrScanner && qrScannerModal) {
+    btnOpenQrScanner.addEventListener('click', async () => {
+      vibrate(30);
+      qrScannerModal.style.display = 'flex';
+      if (qrScanStatus) qrScanStatus.textContent = 'Iniciando cámara...';
+
+      try {
+        if (typeof Html5Qrcode !== 'undefined') {
+          html5QrScanner = new Html5Qrcode("qrCameraReader");
+          const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+
+          await html5QrScanner.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+              vibrate([50, 50, 50]);
+              if (qrScanStatus) qrScanStatus.textContent = '¡Código detectado!';
+              
+              let detectedPin = decodedText.trim();
+              try {
+                const url = new URL(detectedPin);
+                const pinFromParam = url.searchParams.get('room');
+                if (pinFromParam) detectedPin = pinFromParam;
+              } catch (e) {}
+
+              detectedPin = detectedPin.replace(/^GANTZ-/, '');
+
+              stopQrScanner();
+              roomPinInput.value = detectedPin;
+              connectToRoom(detectedPin);
+            },
+            (errorMsg) => {}
+          );
+          if (qrScanStatus) qrScanStatus.textContent = 'Apunta al código QR de la pantalla...';
+        } else {
+          if (qrScanStatus) qrScanStatus.textContent = 'Lector QR no disponible en este dispositivo.';
+        }
+      } catch (err) {
+        logWarn('Error al abrir cámara para QR', err);
+        if (qrScanStatus) qrScanStatus.textContent = 'Permiso de cámara denegado o no disponible.';
+      }
+    });
+  }
+
+  function stopQrScanner() {
+    if (html5QrScanner) {
+      html5QrScanner.stop().then(() => {
+        html5QrScanner.clear();
+        html5QrScanner = null;
+      }).catch(() => {});
+    }
+    if (qrScannerModal) qrScannerModal.style.display = 'none';
+  }
+
+  if (btnCloseQrScanner) {
+    btnCloseQrScanner.addEventListener('click', stopQrScanner);
+  }
+
+  // ==================== PWA INSTALLATION ====================
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => log('PWA ServiceWorker registrado con éxito'))
+        .catch(err => logWarn('Error registrando ServiceWorker', err));
+    });
+  }
+
+  let deferredPrompt = null;
+  const btnInstallPwa = document.getElementById('btnInstallPwa');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (btnInstallPwa) {
+      btnInstallPwa.style.display = 'block';
+      btnInstallPwa.addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          log(`Resultado instalación PWA: ${outcome}`);
+          deferredPrompt = null;
+          btnInstallPwa.style.display = 'none';
+        }
+      });
+    }
+  });
+
   // Initial Render
   renderAll();
+  renderSavedRooms();
 
   // Auto-connect check from URL query parameter ?room=...
   const urlParams = new URLSearchParams(window.location.search);
@@ -784,6 +1021,7 @@
     syncStatusEl.title = 'Clic para cambiar sala';
     syncStatusEl.addEventListener('click', () => {
       roomConnectOverlay.style.display = 'flex';
+      renderSavedRooms();
       roomPinInput.focus();
     });
   }

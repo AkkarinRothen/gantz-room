@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="sphereGrad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#2a384f"/>
+      <stop offset="50%" stop-color="#0b1019"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Background Container -->
+  <rect width="512" height="512" rx="120" fill="#030407"/>
+  <!-- Glowing Sphere -->
+  <circle cx="256" cy="256" r="200" fill="url(#sphereGrad)" stroke="#00ff66" stroke-width="6" filter="url(#neonGlow)"/>
+  <!-- Concentric Digital HUD Rings -->
+  <circle cx="256" cy="256" r="170" fill="none" stroke="#00f0ff" stroke-width="2" stroke-dasharray="14 10" opacity="0.5"/>
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#00ff66" stroke-width="1.5" stroke-dasharray="8 6" opacity="0.3"/>
+  <!-- Typography -->
+  <text x="256" y="265" font-family="'Orbitron', sans-serif, monospace" font-size="68" font-weight="900" fill="#00ff66" text-anchor="middle" letter-spacing="8" filter="url(#neonGlow)">GANTZ</text>
+  <text x="256" y="315" font-family="'Share Tech Mono', monospace, sans-serif" font-size="24" font-weight="bold" fill="#00f0ff" text-anchor="middle" letter-spacing="8">REMOTE</text>
+</svg>

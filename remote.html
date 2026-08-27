@@ -3,7 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GANTZ // CONTROL REMOTO GM (CLOUD)</title>
+  <title>GANTZ // CONTROL REMOTO GM (APP)</title>
+  
+  <!-- PWA Metadata -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#00ff66">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gantz Remote">
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
@@ -11,9 +20,9 @@
 </head>
 <body>
 
-  <!-- Room Connection Overlay (If not opened via QR) -->
+  <!-- Room Connection Hub & Saved Rooms Overlay -->
   <div class="room-connect-overlay" id="roomConnectOverlay">
-    <div class="room-connect-box">
+    <div class="room-connect-box" style="max-height: 90vh; overflow-y: auto;">
       <div class="room-connect-title">CONECTAR A <span>SALA GANTZ</span></div>
       <p style="font-size: 0.8rem; color: #94a3b8;">Ingresa el código PIN (ej: <strong>38VH</strong> o <strong>GANTZ-38VH</strong>):</p>
       
@@ -23,12 +32,41 @@
         <button type="button" class="btn btn-cyan" id="btnPastePin" style="flex: 1; font-size: 0.8rem; padding: 8px;">
           📋 PEGAR PIN
         </button>
+        <button type="button" class="btn btn-gold" id="btnOpenQrScanner" style="flex: 1; font-size: 0.8rem; padding: 8px;">
+          📷 ESCANEAR QR
+        </button>
       </div>
 
       <button class="btn btn-primary" id="btnConnectRoom" style="width: 100%;">
         ⚡ VINCULAR CON LA ESFERA
       </button>
       <div id="connectFeedback" style="margin-top: 10px; font-size: 0.75rem; color: #ffd700; display: none;"></div>
+
+      <!-- Saved / Recent Rooms Section -->
+      <div style="margin-top: 18px; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 14px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="font-family: var(--font-display); font-size: 0.8rem; color: var(--gantz-cyan);">⭐ SALAS RECIENTES & FAVORITAS</div>
+          <div style="font-size: 0.7rem; color: #64748b;" id="savedRoomsCount">0 salas</div>
+        </div>
+        <div id="savedRoomsContainer" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;">
+          <div style="font-size: 0.75rem; color: #64748b; font-style: italic; text-align: center; padding: 10px;">No hay salas guardadas aún</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camera QR Scanner Modal -->
+  <div class="modal-overlay" id="qrScannerModal" style="display: none; z-index: 10005;">
+    <div class="modal-content" style="max-width: 380px; text-align: center;">
+      <div class="card-header">
+        <div class="card-title">📷 ESCANEAR CÓDIGO QR</div>
+        <button class="btn btn-sm btn-danger" id="btnCloseQrScanner">✕</button>
+      </div>
+      <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">
+        Apunta la cámara al código QR en la pantalla de la Esfera:
+      </div>
+      <div id="qrCameraReader" style="width: 100%; border-radius: 8px; overflow: hidden; background: #000; min-height: 250px;"></div>
+      <div id="qrScanStatus" style="font-size: 0.75rem; color: #00ff66; margin-top: 8px;">Buscando código QR...</div>
     </div>
   </div>
 
@@ -41,7 +79,10 @@
         <span id="syncText">SINCRONIZADO</span>
       </div>
     </div>
-    <div class="header-timer-pill" id="headerTimer">60:00</div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button class="btn btn-sm btn-cyan" id="btnInstallPwa" style="display: none; font-size: 0.72rem; padding: 4px 8px;" title="Instalar App en tu pantalla de inicio">📲 INSTALAR</button>
+      <div class="header-timer-pill" id="headerTimer">60:00</div>
+    </div>
   </header>
 
   <!-- Container -->
@@ -348,6 +389,7 @@
 
   <script src="js/logger.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="data/aliens.js"></script>
   <script src="data/weapons.js"></script>
   <script src="js/remote-p2p.js"></script>

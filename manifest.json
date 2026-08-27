@@ -1,0 +1,18 @@
+{
+  "name": "Gantz Remote Controller",
+  "short_name": "Gantz Remote",
+  "description": "Controlador táctil en tiempo real para la Esfera de Gantz",
+  "start_url": "./remote.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#030407",
+  "theme_color": "#00ff66",
+  "icons": [
+    {
+      "src": "assets/icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
