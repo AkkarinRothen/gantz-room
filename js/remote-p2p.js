@@ -51,41 +51,34 @@
     let clean = targetRoomId.trim().toUpperCase();
     if (!clean) return;
 
-    // Normalize room ID: if user types "38VH", turn it into "gantz-38vh"
+    // Normalize room ID: if user types "2ZN5", turn it into "gantz-2zn5"
     let peerTarget = clean.toLowerCase();
     if (!peerTarget.startsWith('gantz-')) {
       peerTarget = 'gantz-' + peerTarget;
     }
     roomId = peerTarget;
 
-    syncText.textContent = 'CONECTANDO...';
-    syncDot.style.background = '#ffd700';
-    showFeedback('⚡ Conectando con la sala ' + clean + '...');
+    // Immediately hide the connect overlay to let the user control the app
+    roomConnectOverlay.style.display = 'none';
+    syncDot.style.background = '#00ff66';
+    syncDot.style.boxShadow = '0 0 8px #00ff66';
+    syncText.textContent = clean;
+    syncText.style.color = '#00ff66';
 
-    // 1. Try BroadcastChannel for 0ms local preview sync
+    // 1. BroadcastChannel for local preview
     try {
       if (typeof BroadcastChannel !== 'undefined') {
         if (!broadcastChan) {
           broadcastChan = new BroadcastChannel('gantz_sync_channel');
           broadcastChan.onmessage = (event) => {
-            handleServerMessage(event.data);
+            if (event.data) handleServerMessage(event.data);
           };
         }
-        // Send request sync
         broadcastChan.postMessage({ type: 'REQUEST_SYNC', targetRoom: roomId });
-        setTimeout(() => {
-          if (appState) {
-            syncDot.style.background = '#00ff66';
-            syncDot.style.boxShadow = '0 0 8px #00ff66';
-            syncText.textContent = 'CONECTADO';
-            syncText.style.color = '#00ff66';
-            roomConnectOverlay.style.display = 'none';
-          }
-        }, 150);
       }
     } catch (e) {}
 
-    // 2. Connect via PeerJS WebRTC
+    // 2. PeerJS WebRTC for Cloud/Mobile
     try {
       if (!peer) {
         peer = new Peer();
@@ -99,9 +92,8 @@
           console.log('WebRTC Connection established with Display!');
           syncDot.style.background = '#00ff66';
           syncDot.style.boxShadow = '0 0 8px #00ff66';
-          syncText.textContent = 'CONECTADO';
+          syncText.textContent = clean;
           syncText.style.color = '#00ff66';
-          roomConnectOverlay.style.display = 'none';
           conn.send({ type: 'REQUEST_SYNC' });
         });
 
@@ -111,10 +103,6 @@
 
         conn.on('close', () => {
           console.warn('Connection closed');
-          syncDot.style.background = '#ff003c';
-          syncDot.style.boxShadow = 'none';
-          syncText.textContent = 'DESCONECTADO';
-          syncText.style.color = '#ff003c';
         });
       }
 
@@ -125,13 +113,6 @@
           doPeerConnect();
         });
       }
-
-      peer.on('error', (err) => {
-        console.warn('Peer error:', err);
-        if (!appState) {
-          showFeedback('⚠️ No se encontró la sala ' + clean + '. Verifica el código.', '#ff003c');
-        }
-      });
     } catch (err) {
       console.warn('Peer error:', err);
     }
@@ -471,10 +452,19 @@
           connectToRoom(text.trim());
         }
       } catch (err) {
-        // Fallback: focus input
         roomPinInput.focus();
         showFeedback('Presiona CTRL+V para pegar');
       }
+    });
+  }
+
+  const syncStatusEl = document.querySelector('.sync-status');
+  if (syncStatusEl) {
+    syncStatusEl.style.cursor = 'pointer';
+    syncStatusEl.title = 'Clic para cambiar sala';
+    syncStatusEl.addEventListener('click', () => {
+      roomConnectOverlay.style.display = 'flex';
+      roomPinInput.focus();
     });
   }
 })();
