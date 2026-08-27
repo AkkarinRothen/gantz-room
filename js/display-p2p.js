@@ -1,7 +1,7 @@
 // Gantz Web Cloud Display Controller (Multi-Layer Transport + Logcat)
 (function() {
   let peer = null;
-  let activeConn = null;
+  let activeConnections = [];
   let localWS = null;
   let broadcastChan = null;
   let roomId = null;
@@ -419,10 +419,13 @@
     msg.source = 'display';
     msg.roomId = roomId;
     
-    // 1. WebRTC DataChannel
-    if (activeConn && activeConn.open) {
-      try { activeConn.send(msg); } catch (e) {}
-    }
+    // 1. WebRTC DataChannels (All connected remotes)
+    activeConnections.forEach(conn => {
+      if (conn && conn.open) {
+        try { conn.send(msg); } catch (e) {}
+      }
+    });
+
     // 2. Local WebSocket Relay
     if (localWS && localWS.readyState === WebSocket.OPEN) {
       try { localWS.send(JSON.stringify(msg)); } catch (e) {}
@@ -431,6 +434,10 @@
     if (broadcastChan) {
       try { broadcastChan.postMessage(msg); } catch (e) {}
     }
+    // 4. LocalStorage Cross-Tab Fallback
+    try {
+      localStorage.setItem('gantz_display_event', JSON.stringify({ ...msg, ts: Date.now() }));
+    } catch (e) {}
   }
 
   // Handle messages from Remote
@@ -639,10 +646,13 @@
       if (window.GantzLogger) window.GantzLogger.updateState('brokerStatus', 'Conectando...');
 
       peer = new Peer(roomId.toLowerCase(), {
+        debug: 1,
         config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun.cloudflare.com:3478' },
             { urls: 'stun:global.stun.twilio.com:3478' }
           ]
         }
@@ -659,8 +669,12 @@
       });
 
       peer.on('connection', (conn) => {
-        activeConn = conn;
         logNet(`Conexión entrante desde Tablet Remote (${conn.peer})`);
+        
+        // Add to active connections pool
+        if (!activeConnections.some(c => c.peer === conn.peer)) {
+          activeConnections.push(conn);
+        }
 
         conn.on('open', () => {
           logNet('✓ Canal WebRTC P2P establecido con la tablet');
@@ -676,6 +690,7 @@
             type: 'SYNC_STATE',
             state: appState,
             aliens: aliensList,
+            weapons: weaponsList,
             roomId: roomId
           });
           if (window.GantzAudio) window.GantzAudio.playClick();
@@ -687,10 +702,13 @@
 
         conn.on('close', () => {
           logWarn('Canal WebRTC cerrado por la tablet');
-          if (window.GantzLogger) window.GantzLogger.updateState('webrtcStatus', 'Cerrado');
-          hudStatusBadge.style.borderColor = '#ff003c';
-          hudStatusBadge.style.color = '#ff003c';
-          hudStatusText.textContent = 'STANDBY';
+          activeConnections = activeConnections.filter(c => c.peer !== conn.peer);
+          if (activeConnections.length === 0) {
+            if (window.GantzLogger) window.GantzLogger.updateState('webrtcStatus', 'Cerrado');
+            hudStatusBadge.style.borderColor = '#ff003c';
+            hudStatusBadge.style.color = '#ff003c';
+            hudStatusText.textContent = 'STANDBY';
+          }
         });
 
         conn.on('error', (err) => {
@@ -708,6 +726,20 @@
     } catch (err) {
       logError('Error inicializando PeerJS:', err);
     }
+
+    // Layer 4: LocalStorage Event Listener for Cross-Tab sync
+    try {
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'gantz_remote_event' && e.newValue) {
+          try {
+            const data = JSON.parse(e.newValue);
+            if (data && data.source === 'remote') {
+              handleRemoteMessage(data);
+            }
+          } catch (err) {}
+        }
+      });
+    } catch (e) {}
   }
 
   window.forceReconnectGantz = function() {
