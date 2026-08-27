@@ -195,6 +195,7 @@
           <div class="card-title">🏆 CAZADORES Y PUNTUACIÓN</div>
           <div style="display: flex; gap: 6px;">
             <button class="btn btn-sm" id="btnAddHunter">➕ Cazador</button>
+            <button class="btn btn-gold btn-sm" onclick="generateMangaReport(appState, aliensList)" title="Generar Ficha Manga de la Misión">📄 Reporte</button>
             <button class="btn btn-primary btn-sm" id="btnBroadcastScoring">📺 Evaluar</button>
           </div>
         </div>
@@ -707,6 +708,7 @@
   <script src="js/vendor/html5-qrcode.min.js"></script>
   <script src="data/aliens.js"></script>
   <script src="data/weapons.js"></script>
+  <script src="js/manga-report.js"></script>
   <script src="js/remote-p2p.js"></script>
   <script>
     if ('serviceWorker' in navigator) {

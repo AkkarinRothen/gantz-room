@@ -1,0 +1,211 @@
+:root {
+  --bg-main: #06080d;
+  --bg-card: #0e121a;
+  --border-color: #1e293b;
+  --gantz-green: #00ff66;
+  --gantz-green-glow: rgba(0, 255, 102, 0.4);
+  --gantz-red: #ff003c;
+  --gantz-red-glow: rgba(255, 0, 60, 0.5);
+  --gantz-cyan: #00f0ff;
+  --gantz-gold: #ffd700;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --font-display: 'Orbitron', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-digital: 'VT323', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.player-header {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.player-logo {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #fff;
+}
+
+.player-logo span {
+  color: var(--gantz-green);
+}
+
+.player-container {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: var(--gantz-cyan);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Suit Integrity Bar */
+.suit-meter-box {
+  background: #020305;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  position: relative;
+}
+
+.suit-meter-bar {
+  height: 14px;
+  background: #111;
+  border-radius: 7px;
+  overflow: hidden;
+  margin: 8px 0;
+  border: 1px solid #334155;
+}
+
+.suit-meter-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #00ff66, #00f0ff);
+  transition: width 0.4s ease, background 0.4s ease;
+  box-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+}
+
+.suit-meter-fill.cracked {
+  width: 50%;
+  background: linear-gradient(90deg, #ffd700, #ff8c00);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+.suit-meter-fill.broken {
+  width: 5%;
+  background: #ff003c;
+  box-shadow: 0 0 10px rgba(255, 0, 60, 0.8);
+}
+
+/* Mini Radar */
+.radar-box {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background: radial-gradient(circle, #091319 0%, #030407 80%);
+  border: 1.5px solid rgba(0, 240, 255, 0.4);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.radar-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 240, 255, 0.25);
+}
+
+.radar-sweep-line {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 120px; height: 120px;
+  transform-origin: top left;
+  background: conic-gradient(from 0deg, rgba(0, 240, 255, 0.4) 0deg, transparent 60deg);
+  animation: radarSweepAnim 3.5s linear infinite;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+@keyframes radarSweepAnim {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.alien-blip {
+  position: absolute;
+  top: 35%; left: 60%;
+  width: 10px; height: 10px;
+  background: #ff003c;
+  border-radius: 50%;
+  box-shadow: 0 0 12px #ff003c;
+  animation: blipPulse 1.2s infinite alternate;
+}
+
+.hunter-blip {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 8px; height: 8px;
+  background: #00ff66;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #00ff66;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes blipPulse {
+  0% { transform: scale(0.8); opacity: 0.7; }
+  100% { transform: scale(1.4); opacity: 1; }
+}
+
+/* Modal Selector */
+.player-modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(6, 8, 13, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.player-modal-box {
+  background: #0d121c;
+  border: 2px solid var(--gantz-cyan);
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GANTZ // PANTALLA DE JUGADOR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/player.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header class="player-header">
+    <div class="player-logo">GANTZ <span>PLAYER</span></div>
+    <div id="playerRoomPinBadge" style="font-family: monospace; font-size: 0.75rem; color: var(--gantz-cyan); border: 1px solid var(--gantz-cyan); padding: 2px 6px; border-radius: 4px;">SALA: CONECTANDO...</div>
+  </header>
+
+  <!-- Player Main View -->
+  <main class="player-container">
+    
+    <!-- Hunter Profile & G-Suit Status Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>🛡️ ESTADO DEL CAZADOR:</span>
+        <span id="playerHunterName" style="color: #fff; margin-left: auto;">SELECCIONA TU CAZADOR</span>
+      </div>
+
+      <div class="suit-meter-box">
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+          <span>INTEGRIDAD DEL TRAJE G-SUIT:</span>
+          <span id="playerSuitText" style="color: var(--gantz-green); font-weight: bold;">100% ÓPTIMO</span>
+        </div>
+        <div class="suit-meter-bar">
+          <div class="suit-meter-fill" id="playerSuitFill"></div>
+        </div>
+        <div id="playerSuitWarning" style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
+          ✓ Circuitos de contracción muscular y cápsulas intactas.
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+        <div style="background: #020305; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
+          <div style="font-size: 0.7rem; color: #94a3b8;">PUNTOS ACUMULADOS:</div>
+          <div id="playerPointsText" style="font-family: var(--font-display); font-size: 1.3rem; color: var(--gantz-gold); font-weight: 900;">0 pts</div>
+        </div>
+        <div style="background: #020305; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
+          <div style="font-size: 0.7rem; color: #94a3b8;">ESTADO VITAL:</div>
+          <div id="playerStatusText" style="font-family: var(--font-display); font-size: 1.1rem; color: var(--gantz-green); font-weight: bold;">EN COMBATE</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Mission Timer & Radar Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>🛰️ RADAR TÁCTICO & CUENTA ATRÁS</span>
+        <span id="playerTimerText" style="margin-left: auto; font-family: var(--font-digital); font-size: 1.4rem; color: var(--gantz-green);">60:00</span>
+      </div>
+
+      <div class="radar-box">
+        <div class="radar-ring" style="width: 50px; height: 50px;"></div>
+        <div class="radar-ring" style="width: 100px; height: 100px;"></div>
+        <div class="radar-ring" style="width: 150px; height: 150px;"></div>
+        <div class="radar-sweep-line"></div>
+        <div class="hunter-blip" title="Tu posición"></div>
+        <div class="alien-blip" title="Objetivo Alienígena"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #94a3b8; margin-top: 6px;">
+        <span>🟢 Tu posición</span>
+        <span style="color: #ff003c;">🔴 Presa Alienígena</span>
+      </div>
+    </div>
+
+    <!-- Active Alien Target Card -->
+    <div class="card">
+      <div class="card-title">🎯 OBJETIVO DE LA ESFERA</div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <img id="playerAlienImg" src="assets/webp/monsters/alien_cebolla_joven_recortado.webp" style="width: 65px; height: 65px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); background: #000;" alt="Alien">
+        <div>
+          <div id="playerAlienName" style="font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; color: #fff;">ALIEN CEBOLLA (JOVEN)</div>
+          <div id="playerAlienTraits" style="font-size: 0.75rem; color: var(--gantz-green); margin-top: 2px;">FUERTE Y RÁPIDO</div>
+          <div id="playerAlienPoints" style="font-size: 0.75rem; color: var(--gantz-gold); margin-top: 2px;">RECOMPENSA: 10 PTS</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Player Select Modal -->
+  <div class="player-modal" id="playerSelectModal">
+    <div class="player-modal-box">
+      <div style="font-family: var(--font-display); font-size: 1.1rem; color: var(--gantz-cyan); margin-bottom: 8px;">
+        👤 IDENTIFÍCATE, CAZADOR
+      </div>
+      <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 14px;">
+        Selecciona tu personaje para vincular tu traje G-Suit:
+      </div>
+      <div id="playerSelectList" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; margin-bottom: 14px;">
+        <div style="color: #94a3b8; font-size: 0.8rem;">Conectando a la Esfera...</div>
+      </div>
+      <input type="text" id="playerRoomCodeInput" placeholder="PIN DE SALA (EJ: GANTZ-777)" style="width: 100%; background: #000; border: 1px solid #334155; color: var(--gantz-gold); padding: 8px; text-align: center; font-family: monospace; font-size: 1rem; border-radius: 4px; margin-bottom: 10px;">
+      <button type="button" id="btnConnectPlayerRoom" style="width: 100%; background: var(--gantz-green); color: #000; border: none; padding: 10px; font-weight: bold; font-family: var(--font-display); border-radius: 4px; cursor: pointer;">
+        ⚡ CONECTAR AL COMBATE
+      </button>
+    </div>
+  </div>
+
+  <script src="js/logger.js"></script>
+  <script src="js/vendor/peerjs.min.js"></script>
+  <script src="data/aliens.js"></script>
+  <script src="data/weapons.js"></script>
+  <script src="js/player-p2p.js"></script>
+</body>
+</html>

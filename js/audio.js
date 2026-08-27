@@ -274,30 +274,75 @@ class GantzAudioEngine {
     this.radioTimeouts = [];
   }
 
+  // ------------------ SPATIAL REVERB CONVOLVER & FM SYNTH ENGINE ------------------
+  createReverbNode(duration = 1.6, decay = 2.2) {
+    if (!this.ctx) return null;
+    const sampleRate = this.ctx.sampleRate;
+    const length = sampleRate * duration;
+    const impulse = this.ctx.createBuffer(2, length, sampleRate);
+    const left = impulse.getChannelData(0);
+    const right = impulse.getChannelData(1);
+
+    for (let i = 0; i < length; i++) {
+      const n = (length - i) / length;
+      left[i] = (Math.random() * 2 - 1) * Math.pow(n, decay);
+      right[i] = (Math.random() * 2 - 1) * Math.pow(n, decay);
+    }
+
+    const convolver = this.ctx.createConvolver();
+    convolver.buffer = impulse;
+    return convolver;
+  }
+
   // ------------------ GANTZ WEAPON SYNTHESIZERS ------------------
-  // 1. X-Gun: High energy pulse + 2.5s DELAYED EXPLOSION!
+  // 1. X-Gun: FM Synthesis + High-frequency capacitor charge + 2.5s DELAYED EXPLOSION!
   playXGun() {
     if (this.isMuted) return;
     this.init();
     const now = this.ctx.currentTime;
 
-    // Shot charging & laser pop
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(800, now);
-    osc.frequency.exponentialRampToValueAtTime(3200, now + 0.12);
-    osc.frequency.exponentialRampToValueAtTime(100, now + 0.35);
+    // A. Capacitor Whine (Charging)
+    const chargeOsc = this.ctx.createOscillator();
+    const chargeGain = this.ctx.createGain();
+    chargeOsc.type = 'sine';
+    chargeOsc.frequency.setValueAtTime(600, now);
+    chargeOsc.frequency.exponentialRampToValueAtTime(4200, now + 0.18);
+    chargeGain.gain.setValueAtTime(0.2, now);
+    chargeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
-    gain.gain.setValueAtTime(0.35, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    chargeOsc.connect(chargeGain);
+    chargeGain.connect(this.getDestination());
+    chargeOsc.start(now);
+    chargeOsc.stop(now + 0.22);
 
-    osc.connect(gain);
-    gain.connect(this.getDestination());
-    osc.start(now);
-    osc.stop(now + 0.42);
+    // B. FM Laser Burst (Carrier + Modulator)
+    const carrier = this.ctx.createOscillator();
+    const modulator = this.ctx.createOscillator();
+    const modGain = this.ctx.createGain();
+    const mainGain = this.ctx.createGain();
 
-    // Delayed 2.5 second Internal Explosion
+    carrier.type = 'sawtooth';
+    carrier.frequency.setValueAtTime(1400, now + 0.05);
+    carrier.frequency.exponentialRampToValueAtTime(180, now + 0.35);
+
+    modulator.type = 'sine';
+    modulator.frequency.setValueAtTime(280, now + 0.05);
+    modGain.gain.setValueAtTime(600, now + 0.05);
+
+    modulator.connect(carrier.frequency);
+
+    mainGain.gain.setValueAtTime(0.4, now + 0.05);
+    mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+    carrier.connect(mainGain);
+    mainGain.connect(this.getDestination());
+
+    modulator.start(now + 0.05);
+    carrier.start(now + 0.05);
+    modulator.stop(now + 0.42);
+    carrier.stop(now + 0.42);
+
+    // C. Delayed 2.5 second Internal Thermal Explosion with Spatial Reverb
     setTimeout(() => {
       if (!this.ctx) return;
       const boomTime = this.ctx.currentTime;
@@ -306,35 +351,73 @@ class GantzAudioEngine {
       const boomOsc = this.ctx.createOscillator();
       const boomGain = this.ctx.createGain();
       boomOsc.type = 'sine';
-      boomOsc.frequency.setValueAtTime(140, boomTime);
-      boomOsc.frequency.exponentialRampToValueAtTime(30, boomTime + 0.8);
+      boomOsc.frequency.setValueAtTime(160, boomTime);
+      boomOsc.frequency.exponentialRampToValueAtTime(25, boomTime + 1.1);
 
-      boomGain.gain.setValueAtTime(0.5, boomTime);
-      boomGain.gain.exponentialRampToValueAtTime(0.001, boomTime + 0.85);
+      boomGain.gain.setValueAtTime(0.65, boomTime);
+      boomGain.gain.exponentialRampToValueAtTime(0.001, boomTime + 1.15);
 
-      boomOsc.connect(boomGain);
-      boomGain.connect(this.getDestination());
+      const reverb = this.createReverbNode(1.8, 2.5);
+      if (reverb) {
+        boomOsc.connect(boomGain);
+        boomGain.connect(reverb);
+        reverb.connect(this.getDestination());
+      } else {
+        boomOsc.connect(boomGain);
+        boomGain.connect(this.getDestination());
+      }
+
       boomOsc.start(boomTime);
-      boomOsc.stop(boomTime + 0.9);
+      boomOsc.stop(boomTime + 1.2);
 
-      // Explosion noise crackle
-      const bufferSize = this.ctx.sampleRate * 0.7;
+      // Organic rupture noise crackle
+      const bufferSize = this.ctx.sampleRate * 0.9;
       const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
       const output = buffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
-        output[i] = Math.random() * 2 - 1;
+        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.3));
       }
       const noise = this.ctx.createBufferSource();
       noise.buffer = buffer;
       const noiseGain = this.ctx.createGain();
-      noiseGain.gain.setValueAtTime(0.35, boomTime);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, boomTime + 0.7);
+      noiseGain.gain.setValueAtTime(0.45, boomTime);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, boomTime + 0.85);
 
       noise.connect(noiseGain);
       noiseGain.connect(this.getDestination());
       noise.start(boomTime);
-      noise.stop(boomTime + 0.75);
+      noise.stop(boomTime + 0.9);
     }, 2500);
+  }
+
+  // 1b. Z-Gun: Heavy Gravitational Compression Cannon
+  playZGun() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    const gravOsc = this.ctx.createOscillator();
+    const gravGain = this.ctx.createGain();
+    gravOsc.type = 'sawtooth';
+    gravOsc.frequency.setValueAtTime(50, now);
+    gravOsc.frequency.exponentialRampToValueAtTime(600, now + 0.2);
+    gravOsc.frequency.exponentialRampToValueAtTime(20, now + 1.2);
+
+    gravGain.gain.setValueAtTime(0.7, now);
+    gravGain.gain.exponentialRampToValueAtTime(0.001, now + 1.3);
+
+    const reverb = this.createReverbNode(2.2, 2.0);
+    if (reverb) {
+      gravOsc.connect(gravGain);
+      gravGain.connect(reverb);
+      reverb.connect(this.getDestination());
+    } else {
+      gravOsc.connect(gravGain);
+      gravGain.connect(this.getDestination());
+    }
+
+    gravOsc.start(now);
+    gravOsc.stop(now + 1.35);
   }
 
   // 2. Y-Gun: Three latch anchor cables + warp tone

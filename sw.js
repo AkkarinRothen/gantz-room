@@ -1,16 +1,20 @@
 // Gantz Web PWA Service Worker - Offline Cache-First Strategy
-const CACHE_NAME = 'gantz-cache-v1.2';
+const CACHE_NAME = 'gantz-cache-v1.3';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './remote.html',
+  './player.html',
   './manifest.json',
   './css/display.css',
   './css/remote.css',
+  './css/player.css',
   './js/logger.js',
   './js/audio.js',
   './js/display-p2p.js',
   './js/remote-p2p.js',
+  './js/player-p2p.js',
+  './js/manga-report.js',
   './js/vendor/peerjs.min.js',
   './js/vendor/qrcode.min.js',
   './js/vendor/html5-qrcode.min.js',
