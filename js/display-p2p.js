@@ -255,7 +255,9 @@
         viewBriefing.style.display = 'flex';
         if (appState.currentAlien) {
           const alien = appState.currentAlien;
-          briefingImg.src = alien.image || 'assets/aliens/alien_negi.jpg';
+          briefingImg.src = alien.image || 'assets/webp/monsters/alien_cebolla_joven_recortado.webp';
+          briefingImg.style.objectPosition = alien.imagePosition || 'center top';
+          briefingImg.style.transform = `scale(${alien.imageScale || 1.05})`;
           briefingName.textContent = (alien.name || 'ALIEN').toUpperCase();
 
           const chars = (alien.characteristics || alien.traits || 'FUERTE').split('\n').map(c => c.trim()).filter(Boolean).join('<br>');

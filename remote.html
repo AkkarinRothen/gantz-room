@@ -270,21 +270,53 @@
       <form id="alienForm">
         <input type="hidden" id="alienFormId">
         
-        <!-- Live Image Preview & Dual Selector + Official Gallery -->
-        <div class="form-group" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0,240,255,0.2); border-radius: 8px; padding: 12px; text-align: center;">
-          <div style="display: flex; gap: 12px; align-items: center;">
-            <img id="alienPreviewImg" src="assets/webp/monsters/alien_cebolla_joven_recortado.webp" style="width: 75px; height: 75px; border-radius: 8px; object-fit: cover; border: 2px solid #00ff66; box-shadow: 0 0 10px rgba(0,255,102,0.3); background: #000;">
+        <!-- Live Image Preview & Dual Selector + Official Gallery + Framing Sliders -->
+        <div class="form-group" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(0,240,255,0.25); border-radius: 8px; padding: 12px;">
+          <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
+            <div style="width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 2px solid #00ff66; box-shadow: 0 0 10px rgba(0,255,102,0.3); background: #000; flex-shrink: 0;">
+              <img id="alienPreviewImg" src="assets/webp/monsters/alien_cebolla_joven_recortado.webp" style="width: 100%; height: 100%; object-fit: cover; object-position: center top; transition: all 0.1s ease;">
+            </div>
             <div style="flex: 1; text-align: left; display: flex; flex-direction: column; gap: 6px;">
               <input type="file" id="alienFileInput" accept="image/*" style="display: none;">
               <div style="display: flex; gap: 6px;">
-                <button type="button" class="btn btn-gold btn-sm" id="btnOpenGallery" style="flex: 1; font-size: 0.75rem; padding: 6px;">
-                  🖼️ GALERÍA OFICIAL
+                <button type="button" class="btn btn-gold btn-sm" id="btnOpenGallery" style="flex: 1; font-size: 0.72rem; padding: 6px 4px;">
+                  🖼️ GALERÍA
                 </button>
-                <button type="button" class="btn btn-primary btn-sm" id="btnUploadAlienFile" style="flex: 1; font-size: 0.75rem; padding: 6px;">
+                <button type="button" class="btn btn-primary btn-sm" id="btnUploadAlienFile" style="flex: 1; font-size: 0.72rem; padding: 6px 4px;">
                   📁 SUBIR
                 </button>
               </div>
               <input type="text" class="form-input" id="alienFormImage" value="assets/webp/monsters/alien_cebolla_joven_recortado.webp" placeholder="URL o ruta de imagen" style="padding: 4px 8px; font-size: 0.75rem;">
+            </div>
+          </div>
+
+          <!-- Framing & Zoom Controls -->
+          <div style="background: rgba(6,8,13,0.7); border-radius: 6px; padding: 8px; border: 1px dashed rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.75rem; color: var(--gantz-cyan); font-weight: bold;">🎛️ ENCUADRE DE LA IMAGEN</span>
+              <div style="display: flex; gap: 4px;">
+                <button type="button" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.65rem;" onclick="quickFramePosition(0, 50, 1.1)">👤 Cabeza</button>
+                <button type="button" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.65rem;" onclick="quickFramePosition(50, 50, 1.0)">👕 Centro</button>
+                <button type="button" class="btn btn-sm" style="padding: 2px 6px; font-size: 0.65rem;" onclick="quickFramePosition(0, 50, 1.05)">↺ Reset</button>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.72rem;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 85px; color: #94a3b8;">↕️ Vertical (Y):</span>
+                <input type="range" id="alienFramePosY" min="0" max="100" value="0" style="flex: 1; accent-color: var(--gantz-green);">
+                <span id="labelFramePosY" style="width: 32px; text-align: right; color: var(--gantz-green);">0%</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 85px; color: #94a3b8;">↔️ Horizontal (X):</span>
+                <input type="range" id="alienFramePosX" min="0" max="100" value="50" style="flex: 1; accent-color: var(--gantz-cyan);">
+                <span id="labelFramePosX" style="width: 32px; text-align: right; color: var(--gantz-cyan);">50%</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 85px; color: #94a3b8;">🔍 Zoom:</span>
+                <input type="range" id="alienFrameScale" min="100" max="250" value="105" style="flex: 1; accent-color: var(--gantz-gold);">
+                <span id="labelFrameScale" style="width: 32px; text-align: right; color: var(--gantz-gold);">1.05x</span>
+              </div>
             </div>
           </div>
         </div>

@@ -450,6 +450,41 @@
     }
   };
 
+  // Framing controls elements
+  const alienFramePosY = document.getElementById('alienFramePosY');
+  const alienFramePosX = document.getElementById('alienFramePosX');
+  const alienFrameScale = document.getElementById('alienFrameScale');
+  const labelFramePosY = document.getElementById('labelFramePosY');
+  const labelFramePosX = document.getElementById('labelFramePosX');
+  const labelFrameScale = document.getElementById('labelFrameScale');
+
+  function updatePreviewFraming() {
+    const y = alienFramePosY ? alienFramePosY.value : 0;
+    const x = alienFramePosX ? alienFramePosX.value : 50;
+    const scale = alienFrameScale ? (alienFrameScale.value / 100).toFixed(2) : 1.05;
+
+    if (labelFramePosY) labelFramePosY.textContent = `${y}%`;
+    if (labelFramePosX) labelFramePosX.textContent = `${x}%`;
+    if (labelFrameScale) labelFrameScale.textContent = `${scale}x`;
+
+    if (alienPreviewImg) {
+      alienPreviewImg.style.objectPosition = `${x}% ${y}%`;
+      alienPreviewImg.style.transform = `scale(${scale})`;
+    }
+  }
+
+  if (alienFramePosY) alienFramePosY.addEventListener('input', updatePreviewFraming);
+  if (alienFramePosX) alienFramePosX.addEventListener('input', updatePreviewFraming);
+  if (alienFrameScale) alienFrameScale.addEventListener('input', updatePreviewFraming);
+
+  window.quickFramePosition = function(y, x, scale) {
+    vibrate(20);
+    if (alienFramePosY) alienFramePosY.value = y;
+    if (alienFramePosX) alienFramePosX.value = x;
+    if (alienFrameScale) alienFrameScale.value = Math.round(scale * 100);
+    updatePreviewFraming();
+  };
+
   window.editAlien = function(alienId) {
     vibrate(20);
     const alien = aliensList.find(a => a.id === alienId);
@@ -464,7 +499,28 @@
     document.getElementById('alienFormDislikes').value = alien.dislikes || '';
     document.getElementById('alienFormQuote').value = alien.quote || '';
     document.getElementById('alienFormImage').value = alien.image || '';
-    if (alienPreviewImg) alienPreviewImg.src = alien.image || 'assets/aliens/alien_negi.jpg';
+    if (alienPreviewImg) alienPreviewImg.src = alien.image || 'assets/webp/monsters/alien_cebolla_joven_recortado.webp';
+
+    // Parse imagePosition (e.g. "center 10%" or "50% 10%")
+    let posY = 0;
+    let posX = 50;
+    if (alien.imagePosition) {
+      const parts = alien.imagePosition.split(' ');
+      if (parts.length >= 2) {
+        if (parts[0] === 'center') posX = 50;
+        else posX = parseInt(parts[0], 10) || 50;
+
+        if (parts[1] === 'top') posY = 0;
+        else if (parts[1] === 'center') posY = 50;
+        else if (parts[1] === 'bottom') posY = 100;
+        else posY = parseInt(parts[1], 10) || 0;
+      }
+    }
+
+    if (alienFramePosY) alienFramePosY.value = posY;
+    if (alienFramePosX) alienFramePosX.value = posX;
+    if (alienFrameScale) alienFrameScale.value = Math.round((alien.imageScale || 1.05) * 100);
+    updatePreviewFraming();
 
     alienModalTitle.textContent = '✏️ EDITAR OBJETIVO';
     alienModal.classList.add('active');
@@ -474,8 +530,13 @@
     vibrate(20);
     alienForm.reset();
     document.getElementById('alienFormId').value = 'alien-' + Date.now();
-    document.getElementById('alienFormImage').value = 'assets/aliens/alien_negi.jpg';
-    if (alienPreviewImg) alienPreviewImg.src = 'assets/aliens/alien_negi.jpg';
+    document.getElementById('alienFormImage').value = 'assets/webp/monsters/alien_cebolla_joven_recortado.webp';
+    if (alienPreviewImg) alienPreviewImg.src = 'assets/webp/monsters/alien_cebolla_joven_recortado.webp';
+    if (alienFramePosY) alienFramePosY.value = 0;
+    if (alienFramePosX) alienFramePosX.value = 50;
+    if (alienFrameScale) alienFrameScale.value = 105;
+    updatePreviewFraming();
+
     alienModalTitle.textContent = '👾 CREAR NUEVO ALIEN';
     alienModal.classList.add('active');
   });
@@ -488,6 +549,10 @@
     e.preventDefault();
     vibrate(40);
     const id = document.getElementById('alienFormId').value;
+    const posX = alienFramePosX ? alienFramePosX.value : 50;
+    const posY = alienFramePosY ? alienFramePosY.value : 0;
+    const scale = alienFrameScale ? (alienFrameScale.value / 100) : 1.05;
+
     const newAlien = {
       id,
       name: document.getElementById('alienFormName').value,
@@ -497,7 +562,9 @@
       likes: document.getElementById('alienFormLikes').value || 'LAS COSAS RARAS',
       dislikes: document.getElementById('alienFormDislikes').value || '',
       quote: document.getElementById('alienFormQuote').value || '...',
-      image: document.getElementById('alienFormImage').value || 'assets/aliens/alien_negi.jpg'
+      image: document.getElementById('alienFormImage').value || 'assets/webp/monsters/alien_cebolla_joven_recortado.webp',
+      imagePosition: `${posX}% ${posY}%`,
+      imageScale: parseFloat(scale)
     };
 
     const idx = aliensList.findIndex(a => a.id === id);
@@ -1017,6 +1084,10 @@
         vibrate(30);
         if (alienPreviewImg) alienPreviewImg.src = item.path;
         if (alienFormImage) alienFormImage.value = item.path;
+        if (alienFramePosY) alienFramePosY.value = 0;
+        if (alienFramePosX) alienFramePosX.value = 50;
+        if (alienFrameScale) alienFrameScale.value = 105;
+        updatePreviewFraming();
         closeGalleryModal();
       });
       galleryGrid.appendChild(card);

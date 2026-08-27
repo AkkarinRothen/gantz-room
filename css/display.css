@@ -561,6 +561,15 @@ body {
   align-items: center;
   justify-content: center;
   overflow: visible;
+  margin-top: 10px;
+}
+
+.manga-img-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  background: #000;
 }
 
 .manga-target-name-badge {
@@ -572,19 +581,22 @@ body {
   border: 1px solid var(--gantz-green);
   color: #fff;
   font-family: var(--font-display);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 900;
   letter-spacing: 1px;
   padding: 2px 10px;
   white-space: nowrap;
   text-shadow: 0 0 8px var(--gantz-green-glow);
-  z-index: 10;
+  z-index: 20;
 }
 
 .manga-target-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
+  transform-origin: center top;
+  transition: object-position 0.2s ease, transform 0.2s ease;
   filter: contrast(1.2) grayscale(0.2) brightness(0.95);
 }
 
