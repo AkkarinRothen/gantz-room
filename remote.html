@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GANTZ // CONTROL REMOTO GM (CLOUD)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/remote.css">
+</head>
+<body>
+
+  <!-- Room Connection Overlay (If not opened via QR) -->
+  <div class="room-connect-overlay" id="roomConnectOverlay">
+    <div class="room-connect-box">
+      <div class="room-connect-title">CONECTAR A <span>SALA GANTZ</span></div>
+      <p style="font-size: 0.8rem; color: #94a3b8;">Ingresa el código PIN que aparece en la pantalla principal:</p>
+      
+      <input type="text" class="room-pin-input" id="roomPinInput" placeholder="GANTZ-XXXX" maxlength="12">
+      
+      <button class="btn btn-primary" id="btnConnectRoom" style="width: 100%;">
+        ⚡ VINCULAR CON LA ESFERA
+      </button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="remote-header">
+    <div class="logo-wrap">
+      <div class="remote-title">GANTZ <span>REMOTE</span></div>
+      <div class="sync-status">
+        <span class="dot-indicator" id="syncDot"></span>
+        <span id="syncText">SINCRONIZADO</span>
+      </div>
+    </div>
+    <div class="header-timer-pill" id="headerTimer">60:00</div>
+  </header>
+
+  <!-- Container -->
+  <main class="container">
+
+    <!-- ==================== TAB 1: TIMER HUB ==================== -->
+    <div class="tab-panel active" id="tabTimer">
+      <div class="timer-big-box" id="timerBox">
+        <div class="timer-val" id="mainTimerDisplay">60:00</div>
+        <div class="timer-state-label" id="timerStatusLabel">TEMPORIZADOR EN PAUSA</div>
+      </div>
+
+      <!-- Play / Pause / Reset -->
+      <div class="btn-grid-2">
+        <button class="btn btn-primary" id="btnPlayPause">
+          <span id="playIcon">▶</span> <span id="playText">INICIAR MISIÓN</span>
+        </button>
+        <button class="btn btn-danger" id="btnResetTimer">
+          <span>🔄</span> RESET
+        </button>
+      </div>
+
+      <!-- Adjustments (+/- Minutes) -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">⏱️ AJUSTE RÁPIDO DE TIEMPO</div>
+        </div>
+        <div class="btn-grid-4">
+          <button class="btn" onclick="adjustTimer(-300)">-5m</button>
+          <button class="btn" onclick="adjustTimer(-60)">-1m</button>
+          <button class="btn" onclick="adjustTimer(60)">+1m</button>
+          <button class="btn" onclick="adjustTimer(300)">+5m</button>
+        </div>
+      </div>
+
+      <!-- Presets -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🎯 PRESETS DE MISIÓN</div>
+        </div>
+        <div class="btn-grid-4">
+          <button class="btn btn-cyan" onclick="setTimerPreset(3600)">60 Min</button>
+          <button class="btn btn-cyan" onclick="setTimerPreset(1800)">30 Min</button>
+          <button class="btn btn-cyan" onclick="setTimerPreset(900)">15 Min</button>
+          <button class="btn btn-danger" onclick="setTimerPreset(300)">5 Min</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: MONSTERS & TEMPLATES ==================== -->
+    <div class="tab-panel" id="tabAliens">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👾 OBJETIVOS & PLANTILLAS</div>
+          <button class="btn btn-primary btn-sm" id="btnNewAlien">➕ NUEVO</button>
+        </div>
+        <div class="monster-list" id="monstersContainer"></div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: HUNTERS & SCOREPAD ==================== -->
+    <div class="tab-panel" id="tabHunters">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🏆 EVALUACIÓN DE CAZADORES</div>
+          <button class="btn btn-cyan btn-sm" id="btnAddHunter">➕ JUGADOR</button>
+        </div>
+        <div id="huntersContainer"></div>
+        <button class="btn btn-gold" id="btnBroadcastScoring" style="width: 100%; margin-top: 10px;">
+          📢 TRANSMITIR EVALUACIÓN A LA ESFERA
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: LIVE BROADCAST / TERMINAL ==================== -->
+    <div class="tab-panel" id="tabTerminal">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">💬 TRANSMISIÓN EN VIVO A LA ESFERA</div>
+        </div>
+        <textarea class="terminal-textarea" id="customMsgInput" placeholder="Escribe el mensaje que aparecerá en verde en la pantalla..."></textarea>
+        <button class="btn btn-primary" id="btnSendCustomMsg" style="width: 100%;">
+          ⚡ TRANSMITIR TEXTO EN PANTALLA
+        </button>
+
+        <div class="preset-chip-grid">
+          <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 10px;">Frases icónicas de Gantz:</div>
+          <div class="preset-chip" onclick="quickSendMsg('LA HABÉIS PALMADO. AHORA VUESTRAS VIDAS ME PERTENECEN.')">
+            "LA HABÉIS PALMADO. AHORA VUESTRAS VIDAS ME PERTENECEN."
+          </div>
+          <div class="preset-chip" onclick="quickSendMsg('¡MOVED EL TRASERO O MORIRÉIS TODOS!')">
+            "¡MOVED EL TRASERO O MORIRÉIS TODOS!"
+          </div>
+          <div class="preset-chip" onclick="quickSendMsg('TIEMPO AGOTADO. TRANSFERENCIA FINALIZADA.')">
+            "TIEMPO AGOTADO. TRANSFERENCIA FINALIZADA."
+          </div>
+          <div class="preset-chip" onclick="quickSendMsg('EL ALIEN HA SIDO ELIMINADO. PREPARANDO EVALUACIÓN.')">
+            "EL ALIEN HA SIDO ELIMINADO. PREPARANDO EVALUACIÓN."
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 5: MODES & SOUNDBOARD ==================== -->
+    <div class="tab-panel" id="tabModes">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🖥️ MODO DE LA PANTALLA</div>
+        </div>
+        <div class="btn-grid-2">
+          <button class="btn" onclick="setSphereMode('standby')">⚫ Standby</button>
+          <button class="btn btn-cyan" onclick="setSphereMode('open')">🔓 Abrir Esfera</button>
+          <button class="btn btn-primary" onclick="setSphereMode('briefing')">🎯 Briefing</button>
+          <button class="btn btn-danger" onclick="setSphereMode('mission')">⏱️ Misión / Timer</button>
+          <button class="btn btn-gold" onclick="setSphereMode('scoring')">🏆 Puntuaciones</button>
+          <button class="btn" onclick="setSphereMode('broadcast')">💬 Mensaje</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔊 DISPARADOR DE AUDIO (SFX)</div>
+        </div>
+        <div class="btn-grid-2">
+          <button class="btn btn-gold" onclick="triggerSFX('radio')">📻 Radio Taisou</button>
+          <button class="btn btn-danger" onclick="triggerSFX('alarm')">🚨 Alarma Peligro</button>
+          <button class="btn btn-cyan" onclick="triggerSFX('transfer')">⚡ Teletransporte</button>
+          <button class="btn" onclick="triggerSFX('boot')">🔮 Chime Esfera</button>
+          <button class="btn btn-primary" onclick="triggerSFX('score')">🎉 Jingle Puntos</button>
+          <button class="btn" onclick="triggerSFX('click')">🔘 Clic Digital</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== BOTTOM TAB BAR ==================== -->
+  <nav class="bottom-nav">
+    <button class="tab-btn active" onclick="switchTab('tabTimer')">
+      <span class="tab-icon">⏱️</span>
+      <span>Timer</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tabAliens')">
+      <span class="tab-icon">👾</span>
+      <span>Objetivos</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tabHunters')">
+      <span class="tab-icon">🏆</span>
+      <span>Puntos</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tabTerminal')">
+      <span class="tab-icon">💬</span>
+      <span>Terminal</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tabModes')">
+      <span class="tab-icon">⚙️</span>
+      <span>Modos</span>
+    </button>
+  </nav>
+
+  <!-- ==================== MODAL: ALIEN CREATOR / EDITOR ==================== -->
+  <div class="modal-overlay" id="alienModal">
+    <div class="modal-content">
+      <div class="card-header">
+        <div class="card-title" id="alienModalTitle">👾 CREAR NUEVO ALIEN</div>
+        <button class="btn btn-sm btn-danger" onclick="closeAlienModal()">✕</button>
+      </div>
+
+      <form id="alienForm">
+        <input type="hidden" id="alienFormId">
+        
+        <div class="form-group">
+          <label class="form-label">Nombre del Objetivo / Alien</label>
+          <input type="text" class="form-input" id="alienFormName" required placeholder="Ej: Alien Cebollín (Adulto)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Categoría / Misión</label>
+          <input type="text" class="form-input" id="alienFormCat" placeholder="Ej: Misión 01 - Boss">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Puntos de Recompensa</label>
+          <input type="number" class="form-input" id="alienFormPoints" value="5" min="0" max="100">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Frase / Cita de Gantz</label>
+          <input type="text" class="form-input" id="alienFormQuote" placeholder="Ej: '¡¡¡HABÉIS MATADO A MI HIJO!!!'">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Imagen (Ruta local o URL)</label>
+          <input type="text" class="form-input" id="alienFormImage" value="assets/aliens/alien_negi.jpg">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descripción Táctica</label>
+          <textarea class="form-textarea" id="alienFormDesc" rows="2" placeholder="Detalles de la criatura..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Punto Débil / Regla Especial</label>
+          <input type="text" class="form-input" id="alienFormWeakness" placeholder="Ej: Vulnerable a la sobrecarga del traje">
+        </div>
+
+        <div class="btn-grid-2" style="margin-top: 16px;">
+          <button type="button" class="btn" onclick="closeAlienModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Alien</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="data/aliens.js"></script>
+  <script src="js/remote-p2p.js"></script>
+</body>
+</html>
