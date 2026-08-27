@@ -587,34 +587,60 @@
 
     weaponsList.forEach(wpn => {
       const isSelected = wpn.id === currentId;
+      const isRevealed = !!wpn.isRevealed;
       const item = document.createElement('div');
       item.className = `monster-item ${isSelected ? 'selected' : ''}`;
       item.innerHTML = `
-        <div style="font-size: 2.2rem; min-width: 55px; text-align: center; line-height: 1;">
-          ${wpn.icon || '🔫'}
-        </div>
-        <div class="monster-info">
-          <div class="monster-name">${wpn.name}</div>
-          <div class="monster-meta">
-            <span style="color: #00f0ff;">🏷️ ${wpn.category || 'Armamento'}</span>
-            <span>📏 ${wpn.range || 'Medio'}</span>
+        <div style="position: relative; width: 65px; height: 65px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(0,240,255,0.4); flex-shrink: 0; background: #000;">
+          <img src="${wpn.image || 'assets/webp/weapons/civil_y_pistola_alienigena_en_retroceso.webp'}" style="width: 100%; height: 100%; object-fit: cover;">
+          <div style="position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.7); font-size: 0.8rem; padding: 1px 3px; border-radius: 3px;">
+            ${wpn.icon || '🔫'}
           </div>
-          <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 2px;">⚡ ${wpn.mechanics || wpn.description}</div>
-          <div class="monster-quote">${wpn.quote ? `"${wpn.quote}"` : ''}</div>
         </div>
-        <div class="monster-actions" style="display: flex; flex-direction: column; gap: 4px;">
-          <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-cyan'}" onclick="selectWeapon('${wpn.id}')">
+        <div class="monster-info" style="flex: 1;">
+          <div class="monster-name" style="display: flex; align-items: center; gap: 6px;">
+            <span>${escapeHtml(wpn.name)}</span>
+            <span style="font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; ${isRevealed ? 'background: rgba(0,255,102,0.2); color: #00ff66; border: 1px solid #00ff66;' : 'background: rgba(255,0,60,0.2); color: #ff003c; border: 1px solid rgba(255,0,60,0.5);'}">
+              ${isRevealed ? '🔓 REVELADA' : '🔒 OCULTA'}
+            </span>
+          </div>
+          <div class="monster-meta">
+            <span style="color: #00f0ff;">🏷️ ${escapeHtml(wpn.category || 'Armamento')}</span>
+            <span>📏 ${escapeHtml(wpn.range || 'Medio')}</span>
+          </div>
+          <div style="font-size: 0.72rem; color: #fbbf24; margin-top: 2px;">
+            💥 <strong>Daño (Master):</strong> ${escapeHtml(wpn.damageInfo || '2d10')}
+          </div>
+          <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px; line-height: 1.25;">
+            ⚡ <em>${escapeHtml(wpn.secretMechanics || wpn.mechanics || wpn.description || '')}</em>
+          </div>
+        </div>
+        <div class="monster-actions" style="display: flex; flex-direction: column; gap: 4px; min-width: 95px;">
+          <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-cyan'}" onclick="selectWeapon('${wpn.id}')" style="font-size: 0.72rem; padding: 4px 6px;">
             ${isSelected ? '✓ EN PANTALLA' : 'Proyectar'}
           </button>
-          <button class="btn btn-sm btn-danger" onclick="fireWeapon('${wpn.id}')" title="Disparar sonido">
+          <button class="btn btn-sm ${isRevealed ? 'btn-danger' : 'btn-gold'}" onclick="toggleRevealWeapon('${wpn.id}')" style="font-size: 0.72rem; padding: 4px 6px;" title="${isRevealed ? 'Ocultar mecánicas a jugadores' : 'Revelar mecánicas en la Esfera'}">
+            ${isRevealed ? '🔒 Ocultar' : '👁️ Revelar'}
+          </button>
+          <button class="btn btn-sm btn-danger" onclick="fireWeapon('${wpn.id}')" style="font-size: 0.72rem; padding: 4px 6px;" title="Disparar sonido">
             💥 Disparar
           </button>
-          <button class="btn btn-sm" onclick="editWeapon('${wpn.id}')">✏️</button>
         </div>
       `;
       weaponsContainer.appendChild(item);
     });
   }
+
+  window.toggleRevealWeapon = function(weaponId) {
+    vibrate(40);
+    const weapon = weaponsList.find(w => w.id === weaponId);
+    if (weapon) {
+      weapon.isRevealed = !weapon.isRevealed;
+      renderWeapons();
+      sendDisplay({ type: 'TOGGLE_REVEAL_WEAPON', weaponId: weapon.id, isRevealed: weapon.isRevealed });
+      log(`${weapon.isRevealed ? '🔓 Revelado' : '🔒 Ocultado'}: ${weapon.name} a los jugadores`);
+    }
+  };
 
   window.selectWeapon = function(weaponId) {
     vibrate(35);

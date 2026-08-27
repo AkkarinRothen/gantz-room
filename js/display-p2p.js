@@ -62,11 +62,15 @@
   const broadcastBody = document.getElementById('broadcastBody');
 
   const viewWeapon = document.getElementById('viewWeapon');
+  const wpnDisplayImg = document.getElementById('wpnDisplayImg');
   const wpnDisplayIcon = document.getElementById('wpnDisplayIcon');
   const wpnDisplayName = document.getElementById('wpnDisplayName');
   const wpnDisplayCategory = document.getElementById('wpnDisplayCategory');
   const wpnDisplayQuote = document.getElementById('wpnDisplayQuote');
+  const wpnClassifiedBox = document.getElementById('wpnClassifiedBox');
+  const wpnRevealedBox = document.getElementById('wpnRevealedBox');
   const wpnDisplayMechanics = document.getElementById('wpnDisplayMechanics');
+  const wpnDisplayDamage = document.getElementById('wpnDisplayDamage');
   const wpnDisplayRange = document.getElementById('wpnDisplayRange');
 
   const qrModal = document.getElementById('qrModal');
@@ -282,12 +286,23 @@
         viewWeapon.style.display = 'flex';
         if (appState.currentWeapon) {
           const wpn = appState.currentWeapon;
-          wpnDisplayIcon.textContent = wpn.icon || '🔫';
-          wpnDisplayName.textContent = wpn.name.toUpperCase();
-          wpnDisplayCategory.textContent = wpn.category || 'ARMAMENTO';
-          wpnDisplayQuote.textContent = wpn.quote ? `"${wpn.quote}"` : '';
-          wpnDisplayMechanics.textContent = wpn.mechanics || wpn.description;
-          wpnDisplayRange.textContent = wpn.range || 'Medio';
+          if (wpnDisplayImg) wpnDisplayImg.src = wpn.image || 'assets/webp/weapons/civil_y_pistola_alienigena_en_retroceso.webp';
+          if (wpnDisplayIcon) wpnDisplayIcon.textContent = wpn.icon || '🔫';
+          if (wpnDisplayName) wpnDisplayName.textContent = (wpn.name || 'EQUIPAMIENTO').toUpperCase();
+          if (wpnDisplayCategory) wpnDisplayCategory.textContent = (wpn.category || 'ARMAMENTO').toUpperCase();
+          if (wpnDisplayQuote) wpnDisplayQuote.textContent = wpn.quote ? `"${wpn.quote}"` : '';
+
+          // Check if revealed
+          if (wpn.isRevealed) {
+            if (wpnClassifiedBox) wpnClassifiedBox.style.display = 'none';
+            if (wpnRevealedBox) wpnRevealedBox.style.display = 'flex';
+            if (wpnDisplayMechanics) wpnDisplayMechanics.textContent = wpn.secretMechanics || wpn.mechanics || wpn.description;
+            if (wpnDisplayDamage) wpnDisplayDamage.textContent = wpn.damageInfo || 'Daño Estándar';
+            if (wpnDisplayRange) wpnDisplayRange.textContent = wpn.range || 'Medio';
+          } else {
+            if (wpnClassifiedBox) wpnClassifiedBox.style.display = 'flex';
+            if (wpnRevealedBox) wpnRevealedBox.style.display = 'none';
+          }
 
           if (window.GantzAudio) {
             if (wpn.sound === 'xgun') window.GantzAudio.playXGun();
@@ -460,6 +475,20 @@
           else if (msg.sound === 'sword') window.GantzAudio.playSwordSlash();
         }
         break;
+
+      case 'TOGGLE_REVEAL_WEAPON': {
+        const wpn = weaponsList.find(w => w.id === msg.weaponId);
+        if (wpn) {
+          wpn.isRevealed = msg.isRevealed !== undefined ? msg.isRevealed : !wpn.isRevealed;
+          if (appState.currentWeapon && appState.currentWeapon.id === wpn.id) {
+            appState.currentWeapon = wpn;
+            if (appState.mode === 'weapon') setMode('weapon');
+          }
+          if (wpn.isRevealed && window.GantzAudio) window.GantzAudio.playScoreJingle();
+          sendRemote({ type: 'WEAPONS_LIST_UPDATED', weapons: weaponsList });
+        }
+        break;
+      }
 
       case 'SAVE_ALIEN': {
         const idx = aliensList.findIndex(a => a.id === msg.alien.id);

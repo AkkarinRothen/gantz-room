@@ -144,23 +144,49 @@
             </div>
           </div>
 
-          <!-- 6. WEAPON / ARSENAL HOLOGRAM VIEW -->
+          <!-- 6. WEAPON / ARSENAL HOLOGRAM VIEW (ENIGMATIC & REVEALABLE) -->
           <div class="view-weapon" id="viewWeapon">
             <div class="weapon-hologram-card">
-              <div class="weapon-icon-large" id="wpnDisplayIcon">🔫</div>
-              <div class="weapon-title-name" id="wpnDisplayName">X-GUN (PISTOLA X)</div>
-              <div class="weapon-category-pill" id="wpnDisplayCategory">ARMAMENTO BÁSICO</div>
-              <div class="weapon-quote-box" id="wpnDisplayQuote">"Aprieta los dos gatillos a la vez y espera tres segundos."</div>
-              <div class="weapon-specs-grid">
-                <div class="weapon-spec-row">
-                  <span class="weapon-spec-label">⚡ EFECTO:</span>
-                  <span class="weapon-spec-val" id="wpnDisplayMechanics">Retardo de 3s y explosión interna</span>
+              <div class="weapon-header-row">
+                <div class="weapon-media-box">
+                  <img src="assets/webp/weapons/civil_y_pistola_alienigena_en_retroceso.webp" alt="Weapon" class="weapon-img-display" id="wpnDisplayImg">
+                  <div class="weapon-icon-badge" id="wpnDisplayIcon">🔫</div>
                 </div>
-                <div class="weapon-spec-row">
-                  <span class="weapon-spec-label">📏 RANGO:</span>
-                  <span class="weapon-spec-val" id="wpnDisplayRange">Medio (30m)</span>
+                <div class="weapon-main-info">
+                  <div class="weapon-title-name" id="wpnDisplayName">PISTOLA X (X-GUN)</div>
+                  <div class="weapon-category-pill" id="wpnDisplayCategory">ARMAMENTO BÁSICO DE LA ESFERA</div>
+                  <div class="weapon-quote-box" id="wpnDisplayQuote">"Un cacharro negro con cuatro gatillos y cañón giratorio."</div>
                 </div>
               </div>
+
+              <!-- State A: CLASSIFIED (Default for players) -->
+              <div class="weapon-classified-box" id="wpnClassifiedBox">
+                <div class="classified-lock-icon">🔒</div>
+                <div class="classified-text-wrap">
+                  <div class="classified-title">ARCHIVO CLASIFICADO // GANTZ</div>
+                  <div class="classified-desc">El funcionamiento, alcance y daño permanecen ocultos.</div>
+                </div>
+              </div>
+
+              <!-- State B: REVEALED (Unlocked by Master) -->
+              <div class="weapon-revealed-box" id="wpnRevealedBox" style="display: none;">
+                <div class="revealed-tag">⚡ MECÁNICA & FUNCIONAMIENTO DESBLOQUEADO</div>
+                <div class="weapon-specs-grid">
+                  <div class="weapon-spec-row">
+                    <span class="weapon-spec-label">⚙️ FUNCIONAMIENTO:</span>
+                    <span class="weapon-spec-val" id="wpnDisplayMechanics">Debes apretar los dos gatillos a la vez...</span>
+                  </div>
+                  <div class="weapon-spec-row">
+                    <span class="weapon-spec-label">💥 DAÑO / EFECTO:</span>
+                    <span class="weapon-spec-val" id="wpnDisplayDamage" style="color: #ff003c; font-weight: bold;">2d10 Daño Interno</span>
+                  </div>
+                  <div class="weapon-spec-row">
+                    <span class="weapon-spec-label">📏 ALCANCE:</span>
+                    <span class="weapon-spec-val" id="wpnDisplayRange">Medio (30m)</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
