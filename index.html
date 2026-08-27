@@ -327,5 +327,12 @@
   <script src="data/weapons.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/display-p2p.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

@@ -1837,4 +1837,84 @@
       sendDisplay({ type: 'LASER_POINTER', active: false });
     });
   }
+
+  // ==================== CAMPAIGN BACKUP & RESTORE ====================
+  window.exportCampaignBackup = function() {
+    vibrate(30);
+    const backupData = {
+      version: 1,
+      timestamp: Date.now(),
+      roomId: roomId,
+      appState: appState,
+      aliensList: aliensList,
+      weaponsList: weaponsList,
+      savedRooms: getSavedRooms()
+    };
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gantz_campaign_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    log('💾 Respaldo de campaña exportado con éxito');
+  };
+
+  const campaignBackupFileInput = document.getElementById('campaignBackupFileInput');
+  window.triggerImportBackup = function() {
+    vibrate(20);
+    if (campaignBackupFileInput) campaignBackupFileInput.click();
+  };
+
+  if (campaignBackupFileInput) {
+    campaignBackupFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const data = JSON.parse(evt.target.result);
+          if (data && data.appState) {
+            appState = data.appState;
+            if (data.aliensList) aliensList = data.aliensList;
+            if (data.weaponsList) weaponsList = data.weaponsList;
+            saveAppState();
+            renderAll();
+            sendDisplay({
+              type: 'SYNC_STATE',
+              state: appState,
+              aliens: aliensList,
+              weapons: weaponsList,
+              roomId: roomId
+            });
+            alert('✓ Respaldo de campaña restaurado y sincronizado con la Esfera.');
+            log('✓ Campaña restaurada correctamente');
+          } else {
+            alert('⚠️ El archivo seleccionado no contiene un formato de respaldo válido de Gantz.');
+          }
+        } catch (err) {
+          alert('Error al leer el archivo de respaldo: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // ==================== SCREEN WAKELOCK (KEEP AWAKE) ====================
+  async function requestScreenWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        await navigator.wakeLock.request('screen');
+        log('💡 WakeLock de pantalla activado');
+      }
+    } catch (err) {}
+    try {
+      if (window.GantzAndroidBridge && typeof window.GantzAndroidBridge.setKeepScreenOn === 'function') {
+        window.GantzAndroidBridge.setKeepScreenOn(true);
+      }
+    } catch (e) {}
+  }
+  document.addEventListener('click', requestScreenWakeLock, { once: true });
 })();

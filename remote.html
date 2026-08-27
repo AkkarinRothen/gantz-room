@@ -282,6 +282,22 @@
           <button class="btn btn-primary" onclick="triggerSFX('score')">🎉 Jingle Puntos</button>
           <button class="btn" onclick="triggerSFX('click')">🔘 Clic Digital</button>
         </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">💾 GESTIÓN DE CAMPAÑA & PERSISTENCIA</div>
+        </div>
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">
+          Guarda o restaura todos los monstruos, armas y cazadores en un archivo JSON:
+        </div>
+        <div class="btn-grid-2">
+          <button type="button" class="btn btn-primary" onclick="exportCampaignBackup()" style="font-size: 0.75rem;">
+            💾 EXPORTAR BACKUP
+          </button>
+          <button type="button" class="btn btn-cyan" onclick="triggerImportBackup()" style="font-size: 0.75rem;">
+            📂 RESTAURAR BACKUP
+          </button>
+          <input type="file" id="campaignBackupFileInput" accept=".json" style="display: none;">
+        </div>
       </div>
     </div>
 
@@ -692,5 +708,12 @@
   <script src="data/aliens.js"></script>
   <script src="data/weapons.js"></script>
   <script src="js/remote-p2p.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>
