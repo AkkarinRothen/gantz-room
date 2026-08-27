@@ -270,17 +270,21 @@
       <form id="alienForm">
         <input type="hidden" id="alienFormId">
         
-        <!-- Live Image Preview & Dual Selector -->
+        <!-- Live Image Preview & Dual Selector + Official Gallery -->
         <div class="form-group" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0,240,255,0.2); border-radius: 8px; padding: 12px; text-align: center;">
           <div style="display: flex; gap: 12px; align-items: center;">
-            <img id="alienPreviewImg" src="assets/aliens/alien_negi.jpg" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #00ff66; box-shadow: 0 0 10px rgba(0,255,102,0.3); background: #000;">
-            <div style="flex: 1; text-align: left;">
+            <img id="alienPreviewImg" src="assets/webp/monsters/alien_cebolla_joven_recortado.webp" style="width: 75px; height: 75px; border-radius: 8px; object-fit: cover; border: 2px solid #00ff66; box-shadow: 0 0 10px rgba(0,255,102,0.3); background: #000;">
+            <div style="flex: 1; text-align: left; display: flex; flex-direction: column; gap: 6px;">
               <input type="file" id="alienFileInput" accept="image/*" style="display: none;">
-              <button type="button" class="btn btn-primary btn-sm" id="btnUploadAlienFile" style="width: 100%; margin-bottom: 6px;">
-                📁 SUBIR DESDE MI DISPOSITIVO
-              </button>
-              <div style="font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px;">O ingresa una URL web / ruta:</div>
-              <input type="text" class="form-input" id="alienFormImage" value="assets/aliens/alien_negi.jpg" placeholder="https://ejemplo.com/alien.jpg" style="padding: 4px 8px; font-size: 0.8rem;">
+              <div style="display: flex; gap: 6px;">
+                <button type="button" class="btn btn-gold btn-sm" id="btnOpenGallery" style="flex: 1; font-size: 0.75rem; padding: 6px;">
+                  🖼️ GALERÍA OFICIAL
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnUploadAlienFile" style="flex: 1; font-size: 0.75rem; padding: 6px;">
+                  📁 SUBIR
+                </button>
+              </div>
+              <input type="text" class="form-input" id="alienFormImage" value="assets/webp/monsters/alien_cebolla_joven_recortado.webp" placeholder="URL o ruta de imagen" style="padding: 4px 8px; font-size: 0.75rem;">
             </div>
           </div>
         </div>
@@ -384,6 +388,29 @@
           <button type="submit" class="btn btn-primary">Guardar Arma</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: OFFICIAL WEBP GALLERY PICKER ==================== -->
+  <div class="modal-overlay" id="galleryModal" style="z-index: 10006;">
+    <div class="modal-content" style="max-width: 550px; max-height: 85vh;">
+      <div class="card-header">
+        <div class="card-title">🖼️ GALERÍA OFICIAL GANTZ</div>
+        <button class="btn btn-sm btn-danger" onclick="closeGalleryModal()">✕</button>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div style="display: flex; gap: 6px; margin: 10px 0; overflow-x: auto; padding-bottom: 4px;" id="galleryCategoryFilters">
+        <button class="btn btn-sm btn-primary active" onclick="filterGalleryCategory('all', this)">Todos</button>
+        <button class="btn btn-sm" onclick="filterGalleryCategory('monsters', this)">👾 Monstruos</button>
+        <button class="btn btn-sm" onclick="filterGalleryCategory('weapons', this)">🔫 Armas</button>
+        <button class="btn btn-sm" onclick="filterGalleryCategory('characters', this)">🧑 Cazadores</button>
+        <button class="btn btn-sm" onclick="filterGalleryCategory('scenes', this)">🌆 Escenas</button>
+      </div>
+
+      <!-- Gallery Grid -->
+      <div id="galleryGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); gap: 8px; max-height: 55vh; overflow-y: auto; padding: 4px;">
+      </div>
     </div>
   </div>
 

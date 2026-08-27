@@ -1,4 +1,4 @@
-// Base de datos de Armas y Equipamiento de Gantz
+// Base de datos de Armas y Equipamiento de Gantz con ilustraciones WebP
 window.GANTZ_DEFAULT_WEAPONS = [
   {
     id: 'wpn-xgun',
@@ -6,7 +6,7 @@ window.GANTZ_DEFAULT_WEAPONS = [
     category: 'Armamento Básico',
     type: 'Pistola de Energía',
     icon: '🔫',
-    image: '',
+    image: 'assets/webp/weapons/civil_y_pistola_alienigena_en_retroceso.webp',
     range: 'Medio (30m)',
     sound: 'xgun',
     description: 'Arma estándar con 4 gatillos y cañón giratorio cilíndrico. Dispara una onda de compresión invisible.',
@@ -19,7 +19,7 @@ window.GANTZ_DEFAULT_WEAPONS = [
     category: 'Armamento Pesado',
     type: 'Rifle de Precisión',
     icon: '🎯',
-    image: '',
+    image: 'assets/webp/weapons/cazador_biomecanico_en_vuelo_sobre_tokio.webp',
     range: 'Largo (1 km)',
     sound: 'xgun',
     description: 'Versión rifle de la X-Gun con cañón extendido y mira holográfica de bloqueo automático.',
@@ -32,7 +32,7 @@ window.GANTZ_DEFAULT_WEAPONS = [
     category: 'Armamento Táctico',
     type: 'Lanzador de Anclajes',
     icon: '🕸️',
-    image: '',
+    image: 'assets/webp/weapons/cuatro_caminos_ante_la_esfera_negra.webp',
     range: 'Medio (25m)',
     sound: 'ygun',
     description: 'Pistola de tres cañones triangulares que dispara cables de aleación de alta resistencia con tres anclajes.',
@@ -45,7 +45,7 @@ window.GANTZ_DEFAULT_WEAPONS = [
     category: 'Equipamiento Vital',
     type: 'Bio-Armadura de Nanofibras',
     icon: '🥋',
-    image: '',
+    image: 'assets/webp/weapons/traje_biomecanico_reforzado_en_esfera_abierta.webp',
     range: 'Personal',
     sound: 'suit',
     description: 'Traje de elastano negro con cápsulas de líquido azul conectadas a los músculos del usuario.',
@@ -58,7 +58,7 @@ window.GANTZ_DEFAULT_WEAPONS = [
     category: 'Arma Cuerpo a Cuerpo',
     type: 'Espada Retráctil',
     icon: '🗡️',
-    image: '',
+    image: 'assets/webp/weapons/katana_alienigena_telescopica_en_caja_abierta.webp',
     range: 'Cuerpo a Cuerpo / Extensible (30m)',
     sound: 'sword',
     description: 'Espada de aleación negra con empuñadura ergonómica. La hoja puede extenderse decenas de metros en un parpadeo.',
@@ -71,11 +71,37 @@ window.GANTZ_DEFAULT_WEAPONS = [
     category: 'Vehículo Táctico',
     type: 'Monorrueda de Combate',
     icon: '🏍️',
-    image: '',
+    image: 'assets/webp/weapons/motocicleta_alienigena_junto_a_la_esfera_negra.webp',
     range: 'Vehicular',
     sound: 'suit',
     description: 'Vehículo monorrueda con tecnología antigravitatoria parcial, asiento para piloto y copiloto, y cañón frontal.',
     mechanics: 'Velocidad de hasta 250 km/h, maniobras verticales en edificios y disparo de apoyo frontal.',
     quote: 'Para llegar a la zona de caza antes que nadie.'
+  },
+  {
+    id: 'wpn-zgun',
+    name: 'Z-Gun (Cañón Gravitatorio)',
+    category: 'Arma de 100 Puntos',
+    type: 'Cañón de Gravedad Brutal',
+    icon: '⚡',
+    image: 'assets/webp/weapons/canon_gravitatorio__impacto_vertical_nocturno.webp',
+    range: 'Medio-Largo (80m)',
+    sound: 'xgun',
+    description: 'Arma pesada que crea un cilindro de gravedad aplastante sobre el área seleccionada.',
+    mechanics: 'Aplasta al objetivo instantáneamente contra el suelo dejando un cráter geométrico.',
+    quote: 'Gravedad concentrada a nivel nuclear.'
+  },
+  {
+    id: 'wpn-radar',
+    name: 'Radar Táctico de Gantz',
+    category: 'Equipo de Rastreo',
+    type: 'HUD Holográfico',
+    icon: '🧭',
+    image: 'assets/webp/weapons/radar_alienigena_en_la_oscuridad.webp',
+    range: 'Global / 1 km',
+    sound: 'click',
+    description: 'Controlador de mano con pantalla circular que detecta la ubicación y el tiempo restante de los objetivos.',
+    mechanics: 'Muestra puntos de calor y flechas direccionales hacia los aliens ocultos.',
+    quote: 'Encuentra a los monstruos antes de que se acabe el tiempo.'
   }
 ];

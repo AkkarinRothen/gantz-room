@@ -973,6 +973,78 @@
     }
   });
 
+  // ==================== GALLERY PICKER ====================
+  let galleryData = null;
+  let currentGalleryFilter = 'all';
+  const galleryModal = document.getElementById('galleryModal');
+  const galleryGrid = document.getElementById('galleryGrid');
+  const btnOpenGallery = document.getElementById('btnOpenGallery');
+
+  async function loadGalleryData() {
+    if (galleryData) return;
+    try {
+      const res = await fetch('assets/webp/gallery_manifest.json');
+      if (res.ok) {
+        galleryData = await res.json();
+      }
+    } catch (e) {}
+  }
+
+  function renderGalleryGrid() {
+    if (!galleryGrid || !galleryData) return;
+    galleryGrid.innerHTML = '';
+
+    let items = [];
+    if (currentGalleryFilter === 'all') {
+      items = [
+        ...(galleryData.monsters || []),
+        ...(galleryData.weapons || []),
+        ...(galleryData.characters || []),
+        ...(galleryData.scenes || [])
+      ];
+    } else {
+      items = galleryData[currentGalleryFilter] || [];
+    }
+
+    items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'gallery-card';
+      card.innerHTML = `
+        <img src="${item.path}" class="gallery-thumb" loading="lazy">
+        <div class="gallery-card-title">${escapeHtml(item.title)}</div>
+      `;
+      card.addEventListener('click', () => {
+        vibrate(30);
+        if (alienPreviewImg) alienPreviewImg.src = item.path;
+        if (alienFormImage) alienFormImage.value = item.path;
+        closeGalleryModal();
+      });
+      galleryGrid.appendChild(card);
+    });
+  }
+
+  window.filterGalleryCategory = function(cat, btn) {
+    vibrate(20);
+    currentGalleryFilter = cat;
+    const filterButtons = document.querySelectorAll('#galleryCategoryFilters button');
+    filterButtons.forEach(b => b.classList.remove('btn-primary', 'active'));
+    if (btn) btn.classList.add('btn-primary', 'active');
+    renderGalleryGrid();
+  };
+
+  if (btnOpenGallery) {
+    btnOpenGallery.addEventListener('click', async () => {
+      vibrate(25);
+      await loadGalleryData();
+      renderGalleryGrid();
+      if (galleryModal) galleryModal.classList.add('active');
+    });
+  }
+
+  window.closeGalleryModal = function() {
+    if (galleryModal) galleryModal.classList.remove('active');
+  };
+
   // Initial Render
   renderAll();
   renderSavedRooms();

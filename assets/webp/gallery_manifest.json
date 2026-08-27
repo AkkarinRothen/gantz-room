@@ -1,0 +1,315 @@
+{
+  "monsters": [
+    {
+      "title": "Brachiosaurio alienígena de hoja colosal",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/brachiosaurio_alienigena_de_hoja_colosal.webp"
+    },
+    {
+      "title": "Kappe alienígena con silbato tallado",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/kappe_alienigena_con_silbato_tallado.webp"
+    },
+    {
+      "title": "Alienígena bajito con alas membranosas",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/alienigena_bajito_con_alas_membranosas.webp"
+    },
+    {
+      "title": "Gigante alienígena de cuatro ojos",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/gigante_alienigena_de_cuatro_ojos.webp"
+    },
+    {
+      "title": "Tiranosaurio alienígena de pesadilla",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/tiranosaurio_alienigena_de_pesadilla.webp"
+    },
+    {
+      "title": "Nurarihyon, coloso óseo alienígena",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/nurarihyon__coloso_oseo_alienigena.webp"
+    },
+    {
+      "title": "Raptor alien biomecánico en tinta manga",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/raptor_alien_biomecanico_en_tinta_manga.webp"
+    },
+    {
+      "title": "Soldado alienígena gigante de cuatro ojos",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/soldado_alienigena_gigante_de_cuatro_ojos.webp"
+    },
+    {
+      "title": "Soldado alienígena de cuatro ojos",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/soldado_alienigena_de_cuatro_ojos.webp"
+    },
+    {
+      "title": "Oni alienígena en forma verdadera",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/oni_alienigena_en_forma_verdadera.webp"
+    },
+    {
+      "title": "Triceratops alien de la misión Kappe",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/triceratops_alien_de_la_mision_kappe.webp"
+    },
+    {
+      "title": "Ángel de mármol en embestida",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/angel_de_marmol_en_embestida.webp"
+    },
+    {
+      "title": "Caballero alienígena sobre corcel acorazado",
+      "category": "02_Expansion",
+      "path": "assets/webp/monsters/caballero_alienigena_sobre_corcel_acorazado.webp"
+    },
+    {
+      "title": "Guardiana Niō alienígena de tinta",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/guardiana_nio_alienigena_de_tinta.webp"
+    },
+    {
+      "title": "Monstruo aviar alienígena de alas pesadas",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/monstruo_aviar_alienigena_de_alas_pesadas.webp"
+    },
+    {
+      "title": "Guardián Niō alienígena de piedra",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/guardian_nio_alienigena_de_piedra.webp"
+    },
+    {
+      "title": "Alienígena Tanaka con ave al hombro",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/alienigena_tanaka_con_ave_al_hombro.webp"
+    },
+    {
+      "title": "Kannon alienígena de mil brazos",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/kannon_alienigena_de_mil_brazos.webp"
+    },
+    {
+      "title": "Kintoki-sama, pequeño alien de cebolla",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/kintoki-sama__pequeno_alien_de_cebolla.webp"
+    },
+    {
+      "title": "Cuervo alienígena de gran ojo",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/cuervo_alienigena_de_gran_ojo.webp"
+    },
+    {
+      "title": "Alien cebolla adulto en abrigo negro",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/alien_cebolla_adulto_en_abrigo_negro.webp"
+    },
+    {
+      "title": "Monstruo aviar gigante sin fondo",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/monstruo_aviar_gigante_sin_fondo.webp"
+    },
+    {
+      "title": "Guardián budista de piedra, estilo manga",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/guardian_budista_de_piedra__estilo_manga.webp"
+    },
+    {
+      "title": "Guardián Niō alienígena de cuernos largos",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/guardian_nio_alienigena_de_cuernos_largos.webp"
+    },
+    {
+      "title": "Alien cebolla joven recortado",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/alien_cebolla_joven_recortado.webp"
+    },
+    {
+      "title": "Guardiana enmascarada en kimono con katana",
+      "category": "01_Iniciales",
+      "path": "assets/webp/monsters/guardiana_enmascarada_en_kimono_con_katana.webp"
+    }
+  ],
+  "weapons": [
+    {
+      "title": "Motocicleta alienígena junto a la esfera negra",
+      "category": "Armas y Equipo",
+      "path": "assets/webp/weapons/motocicleta_alienigena_junto_a_la_esfera_negra.webp"
+    },
+    {
+      "title": "Cuatro caminos ante la esfera negra",
+      "category": "Armas y Equipo",
+      "path": "assets/webp/weapons/cuatro_caminos_ante_la_esfera_negra.webp"
+    },
+    {
+      "title": "Katana alienígena telescópica en caja abierta",
+      "category": "Armas y Equipo",
+      "path": "assets/webp/weapons/katana_alienigena_telescopica_en_caja_abierta.webp"
+    },
+    {
+      "title": "Cañón gravitatorio_ impacto vertical nocturno",
+      "category": "Armas y Equipo",
+      "path": "assets/webp/weapons/canon_gravitatorio__impacto_vertical_nocturno.webp"
+    },
+    {
+      "title": "Garra alienígena contra el traje negro",
+      "category": "Armas y Equipo",
+      "path": "assets/webp/weapons/garra_alienigena_contra_el_traje_negro.webp"
+    },
+    {
+      "title": "Cazador biomecánico en vuelo sobre Tokio",
+      "category": "Armas y Equipo",
+      "path": "assets/webp/weapons/cazador_biomecanico_en_vuelo_sobre_tokio.webp"
+    },
+    {
+      "title": "Cazador inconsciente, nodos aún activos",
+      "category": "Armas y Equipo",
+      "path": "assets/webp/weapons/cazador_inconsciente__nodos_aun_activos.webp"
+    },
+    {
+      "title": "Radar alienígena en la oscuridad",
+      "category": "Armas y Equipo",
+      "path": "assets/webp/weapons/radar_alienigena_en_la_oscuridad.webp"
+    },
+    {
+      "title": "Cazador negro en sobrecarga",
+      "category": "Armas y Equipo",
+      "path": "assets/webp/weapons/cazador_negro_en_sobrecarga.webp"
+    },
+    {
+      "title": "Civil y pistola alienígena en retroceso",
+      "category": "Armas y Equipo",
+      "path": "assets/webp/weapons/civil_y_pistola_alienigena_en_retroceso.webp"
+    },
+    {
+      "title": "Ruptura del traje biomecánico",
+      "category": "Armas y Equipo",
+      "path": "assets/webp/weapons/ruptura_del_traje_biomecanico.webp"
+    },
+    {
+      "title": "Traje biomecánico reforzado en esfera abierta",
+      "category": "Armas y Equipo",
+      "path": "assets/webp/weapons/traje_biomecanico_reforzado_en_esfera_abierta.webp"
+    }
+  ],
+  "characters": [
+    {
+      "title": "Akira Sato en traje Gantz",
+      "category": "02_Cuerpo_completo",
+      "path": "assets/webp/characters/akira_sato_en_traje_gantz.webp"
+    },
+    {
+      "title": "Mei Tanaka, combatiente Gantz en tinta",
+      "category": "02_Cuerpo_completo",
+      "path": "assets/webp/characters/mei_tanaka__combatiente_gantz_en_tinta.webp"
+    },
+    {
+      "title": "Ren Okada con traje de combate",
+      "category": "02_Cuerpo_completo",
+      "path": "assets/webp/characters/ren_okada_con_traje_de_combate.webp"
+    },
+    {
+      "title": "Bombero futurista con rifle X",
+      "category": "02_Cuerpo_completo",
+      "path": "assets/webp/characters/bombero_futurista_con_rifle_x.webp"
+    },
+    {
+      "title": "Taro Ishikawa con X-Rifle",
+      "category": "02_Cuerpo_completo",
+      "path": "assets/webp/characters/taro_ishikawa_con_x-rifle.webp"
+    },
+    {
+      "title": "Kaori Fujimoto en guardia",
+      "category": "02_Cuerpo_completo",
+      "path": "assets/webp/characters/kaori_fujimoto_en_guardia.webp"
+    },
+    {
+      "title": "Sora Miyazaki con traje Gantz",
+      "category": "02_Cuerpo_completo",
+      "path": "assets/webp/characters/sora_miyazaki_con_traje_gantz.webp"
+    },
+    {
+      "title": "Yuna Aoki con traje de combate futurista",
+      "category": "02_Cuerpo_completo",
+      "path": "assets/webp/characters/yuna_aoki_con_traje_de_combate_futurista.webp"
+    },
+    {
+      "title": "Kaori Fujimoto, cazadora alienígena",
+      "category": "01_Retratos",
+      "path": "assets/webp/characters/kaori_fujimoto__cazadora_alienigena.webp"
+    },
+    {
+      "title": "Mei Tanaka bajo luces urbanas",
+      "category": "01_Retratos",
+      "path": "assets/webp/characters/mei_tanaka_bajo_luces_urbanas.webp"
+    },
+    {
+      "title": "Kenji Mori, bombero de combate",
+      "category": "01_Retratos",
+      "path": "assets/webp/characters/kenji_mori__bombero_de_combate.webp"
+    },
+    {
+      "title": "Sora Miyazaki entre sombras digitales",
+      "category": "01_Retratos",
+      "path": "assets/webp/characters/sora_miyazaki_entre_sombras_digitales.webp"
+    },
+    {
+      "title": "Retrato manga de Ren Okada",
+      "category": "01_Retratos",
+      "path": "assets/webp/characters/retrato_manga_de_ren_okada.webp"
+    },
+    {
+      "title": "Akira Sato en misión alienígena",
+      "category": "01_Retratos",
+      "path": "assets/webp/characters/akira_sato_en_mision_alienigena.webp"
+    },
+    {
+      "title": "Retrato manga de Yuna Aoki",
+      "category": "01_Retratos",
+      "path": "assets/webp/characters/retrato_manga_de_yuna_aoki.webp"
+    },
+    {
+      "title": "Taro Ishikawa, técnico de combate",
+      "category": "01_Retratos",
+      "path": "assets/webp/characters/taro_ishikawa__tecnico_de_combate.webp"
+    }
+  ],
+  "scenes": [
+    {
+      "title": "GANTZ × SHADOWDARK",
+      "category": "Escenas",
+      "path": "assets/webp/scenes/gantz___shadowdark.webp"
+    },
+    {
+      "title": "Gantz × Shadowdark_ horror de supervivencia",
+      "category": "Escenas",
+      "path": "assets/webp/scenes/gantz___shadowdark__horror_de_supervivencia.webp"
+    },
+    {
+      "title": "Logotipo tipográfico GANTZ × SHADOWDARK",
+      "category": "Escenas",
+      "path": "assets/webp/scenes/logotipo_tipografico_gantz___shadowdark.webp"
+    },
+    {
+      "title": "Cazadores de la esfera negra",
+      "category": "Escenas",
+      "path": "assets/webp/scenes/cazadores_de_la_esfera_negra.webp"
+    },
+    {
+      "title": "Cazadores contra el monstruo de cebolla",
+      "category": "Escenas",
+      "path": "assets/webp/scenes/cazadores_contra_el_monstruo_de_cebolla.webp"
+    },
+    {
+      "title": "Cazadores ante la esfera negra",
+      "category": "Escenas",
+      "path": "assets/webp/scenes/cazadores_ante_la_esfera_negra.webp"
+    },
+    {
+      "title": "Siete civiles ante la esfera negra",
+      "category": "Escenas",
+      "path": "assets/webp/scenes/siete_civiles_ante_la_esfera_negra.webp"
+    }
+  ]
+}
