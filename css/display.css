@@ -1505,3 +1505,93 @@ body.cinema-mode .zen-exit-btn {
   0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.8; }
   100% { transform: translate(-50%, -50%) scale(1.25); opacity: 1; }
 }
+
+/* ==================== CRT SCANLINES & CINEMATIC RETRO OVERLAY ==================== */
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 99990;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.crt-overlay.active {
+  opacity: 1;
+}
+
+.crt-overlay.active::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  z-index: 99991;
+  background-size: 100% 3px, 6px 100%;
+  pointer-events: none;
+}
+
+.crt-overlay.active::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: radial-gradient(circle at center, transparent 60%, rgba(0, 0, 0, 0.65) 100%);
+  z-index: 99992;
+  pointer-events: none;
+}
+
+/* ==================== MANGA SCREENTONE PATTERN IN BRIEFING ==================== */
+.view-briefing {
+  background: radial-gradient(circle at center, rgba(0, 20, 10, 0.6) 0%, rgba(0, 0, 0, 0.95) 100%),
+              radial-gradient(#00ff66 1px, transparent 1px);
+  background-size: 100% 100%, 12px 12px;
+  background-position: 0 0, 0 0;
+}
+
+/* ==================== CRITICAL DANGER GLITCH & CHROMATIC ABERRATION ==================== */
+.sphere-assembly.danger .digital-timer {
+  animation: gantzGlitch 0.25s infinite alternate;
+}
+
+.sphere-assembly.danger .sphere-screen {
+  border-color: #ff003c;
+  box-shadow: 0 0 40px rgba(255, 0, 60, 0.6), inset 0 0 30px rgba(255, 0, 60, 0.3);
+}
+
+@keyframes gantzGlitch {
+  0% {
+    text-shadow: 2px 0 #00f0ff, -2px 0 #ff003c, 0 0 20px #ff003c;
+    transform: translate(0, 0);
+  }
+  25% {
+    text-shadow: -2px 0 #00f0ff, 2px 0 #ff003c, 0 0 25px #ff003c;
+    transform: translate(-1.5px, 1px);
+  }
+  50% {
+    text-shadow: 3px 0 #00f0ff, -1px 0 #ff003c, 0 0 15px #ff003c;
+    transform: translate(1px, -1px);
+  }
+  75% {
+    text-shadow: -1px 0 #00f0ff, 3px 0 #ff003c, 0 0 30px #ff003c;
+    transform: translate(-1px, 0);
+  }
+  100% {
+    text-shadow: 2px 0 #00f0ff, -2px 0 #ff003c, 0 0 20px #ff003c;
+    transform: translate(0, 1.5px);
+  }
+}
+
+/* ==================== OPEN SPHERE STEAM / BIOMECHANICAL GLOW ==================== */
+.sphere-assembly.is-open .sphere-interior-glow {
+  box-shadow: 0 0 50px rgba(0, 240, 255, 0.7), inset 0 0 40px rgba(0, 240, 255, 0.5);
+  animation: steamPulseAnim 2s infinite alternate;
+}
+
+@keyframes steamPulseAnim {
+  0% { opacity: 0.7; filter: blur(2px); }
+  100% { opacity: 1; filter: blur(0px); }
+}

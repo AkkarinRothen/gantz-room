@@ -18,6 +18,7 @@
   <!-- Perspective 3D Room Environment -->
   <div class="room-bg"></div>
   <div class="floor-grid"></div>
+  <div class="crt-overlay active" id="crtOverlay"></div>
 
   <!-- Top HUD Bar -->
   <header class="top-hud">
@@ -31,6 +32,7 @@
       <div class="room-pin-badge" id="hudConnectedDevices" style="border-color: rgba(0,255,102,0.3); color: #00ff66; font-size: 0.72rem;">📱 0 CONTROLES</div>
     </div>
     <div class="hud-right">
+      <button class="hud-btn" id="btnCrtToggle" title="Activar/Desactivar Efecto CRT Scanlines">📺 CRT ON</button>
       <button class="hud-btn" id="btnZenToggle" title="Modo Cine / Ocultar HUD">🖥️ CINE</button>
       <a href="assets/apk/gantz-remote.apk" download="gantz-remote.apk" class="hud-btn" style="text-decoration: none; border-color: var(--gantz-cyan); color: var(--gantz-cyan);" title="Descargar APK nativa para Android">📲 APK ANDROID</a>
       <button class="hud-btn" id="btnAudioToggle" title="Activar/Silenciar Efectos de Sonido">🔊 AUDIO ON</button>

@@ -355,7 +355,50 @@ body {
 .monster-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+}
+
+/* 2-Column Tactical Card Grid */
+.monster-list.grid-view {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.monster-list.grid-view .monster-item {
+  flex-direction: column;
+  padding: 8px;
+  text-align: center;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.monster-list.grid-view .monster-thumb {
+  width: 100%;
+  height: 85px;
+}
+
+.monster-list.grid-view .monster-name {
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.monster-list.grid-view .monster-meta {
+  justify-content: center;
+  font-size: 0.68rem;
+}
+
+.monster-list.grid-view .monster-actions {
+  flex-direction: row;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.monster-list.grid-view .monster-actions .btn {
+  flex: 1;
+  padding: 4px 2px;
+  font-size: 0.65rem;
 }
 
 .monster-item {
@@ -367,7 +410,7 @@ body {
   gap: 12px;
   align-items: center;
   position: relative;
-  transition: border-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .monster-item.selected {

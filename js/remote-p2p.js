@@ -579,15 +579,15 @@
       const item = document.createElement('div');
       item.className = `monster-item ${isSelected ? 'selected' : ''}`;
       item.innerHTML = `
-        <img src="${alien.image || 'assets/aliens/alien_negi.jpg'}" class="monster-thumb" alt="${alien.name}">
+        <img src="${alien.image || 'assets/aliens/alien_negi.jpg'}" class="monster-thumb" alt="${escapeHtml(alien.name)}">
         <div class="monster-info">
-          <div class="monster-name">${alien.name}</div>
+          <div class="monster-name">${escapeHtml(alien.name)}</div>
           <div class="monster-meta">
             <span>🏆 ${alien.points || 0} pts</span>
-            <span>🏷️ ${alien.category || 'Misión'}</span>
+            <span>🏷️ ${escapeHtml(alien.category || 'Misión')}</span>
           </div>
-          <div style="font-size: 0.72rem; color: #00ff66; margin-top: 2px;">💚 Le gusta: ${alien.likes || 'Las cebolletas'}</div>
-          <div class="monster-quote">${alien.quote ? `"${alien.quote}"` : ''}</div>
+          <div style="font-size: 0.72rem; color: #00ff66; margin-top: 2px;">💚 ${escapeHtml(alien.likes || 'Las cebolletas')}</div>
+          <div class="monster-quote">${alien.quote ? `"${escapeHtml(alien.quote)}"` : ''}</div>
         </div>
         <div class="monster-actions">
           <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-cyan'}" onclick="selectAlien('${alien.id}')">
@@ -599,6 +599,48 @@
       monstersContainer.appendChild(item);
     });
   }
+
+  window.setAliensView = function(mode) {
+    vibrate(20);
+    const container = document.getElementById('monstersContainer');
+    const btnGrid = document.getElementById('btnAliensGrid');
+    const btnList = document.getElementById('btnAliensList');
+    if (container) {
+      container.classList.toggle('grid-view', mode === 'grid');
+    }
+    if (btnGrid && btnList) {
+      btnGrid.className = `btn btn-sm ${mode === 'grid' ? 'btn-cyan' : ''}`;
+      btnList.className = `btn btn-sm ${mode === 'list' ? 'btn-cyan' : ''}`;
+    }
+    try { localStorage.setItem('gantz_aliens_view_mode', mode); } catch (e) {}
+  };
+
+  window.setWeaponsView = function(mode) {
+    vibrate(20);
+    const container = document.getElementById('weaponsContainer');
+    const btnGrid = document.getElementById('btnWeaponsGrid');
+    const btnList = document.getElementById('btnWeaponsList');
+    if (container) {
+      container.classList.toggle('grid-view', mode === 'grid');
+    }
+    if (btnGrid && btnList) {
+      btnGrid.className = `btn btn-sm ${mode === 'grid' ? 'btn-cyan' : ''}`;
+      btnList.className = `btn btn-sm ${mode === 'list' ? 'btn-cyan' : ''}`;
+    }
+    try { localStorage.setItem('gantz_weapons_view_mode', mode); } catch (e) {}
+  };
+
+  let isRemoteCrtEnabled = true;
+  window.toggleRemoteCrt = function() {
+    vibrate(25);
+    isRemoteCrtEnabled = !isRemoteCrtEnabled;
+    const btn = document.getElementById('btnRemoteCrtToggle');
+    if (btn) {
+      btn.className = `btn ${isRemoteCrtEnabled ? 'btn-gold' : ''}`;
+      btn.textContent = isRemoteCrtEnabled ? '📺 Filtro CRT (ON)' : '📺 Filtro CRT (OFF)';
+    }
+    sendDisplay({ type: 'TOGGLE_CRT', enabled: isRemoteCrtEnabled });
+  };
 
   window.selectAlien = function(alienId) {
     vibrate(30);

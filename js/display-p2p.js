@@ -186,6 +186,18 @@
     btnAudioToggle.style.color = isMuted ? '#ff003c' : '#00f0ff';
   });
 
+  // CRT Filter Toggle
+  const crtOverlay = document.getElementById('crtOverlay');
+  const btnCrtToggle = document.getElementById('btnCrtToggle');
+  if (btnCrtToggle && crtOverlay) {
+    btnCrtToggle.addEventListener('click', () => {
+      const active = crtOverlay.classList.toggle('active');
+      btnCrtToggle.textContent = active ? '📺 CRT ON' : '📺 CRT OFF';
+      btnCrtToggle.style.borderColor = active ? '#00ff66' : '#94a3b8';
+      btnCrtToggle.style.color = active ? '#00ff66' : '#94a3b8';
+    });
+  }
+
   // QR Modal Toggle
   btnOpenQR.addEventListener('click', () => qrModal.classList.add('active'));
   btnCloseQR.addEventListener('click', () => qrModal.classList.remove('active'));
@@ -636,6 +648,19 @@
         if (window.GantzAudio && typeof window.GantzAudio.stopAll === 'function') {
           window.GantzAudio.stopAll();
           log('Todos los audios detenidos por el Master');
+        }
+        break;
+
+      case 'TOGGLE_CRT':
+        if (crtOverlay) {
+          const isActive = msg.enabled !== undefined ? msg.enabled : !crtOverlay.classList.contains('active');
+          crtOverlay.classList.toggle('active', isActive);
+          if (btnCrtToggle) {
+            btnCrtToggle.textContent = isActive ? '📺 CRT ON' : '📺 CRT OFF';
+            btnCrtToggle.style.borderColor = isActive ? '#00ff66' : '#94a3b8';
+            btnCrtToggle.style.color = isActive ? '#00ff66' : '#94a3b8';
+          }
+          log(`Filtro CRT ${isActive ? 'activado' : 'desactivado'} desde control remoto`);
         }
         break;
     }

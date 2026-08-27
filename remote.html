@@ -173,12 +173,18 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">👾 OBJETIVOS ALIENÍGENAS</div>
-          <button class="btn btn-primary btn-sm" id="btnNewAlien">➕ NUEVO</button>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <div style="display: flex; gap: 2px; background: rgba(0,0,0,0.4); border: 1px solid rgba(0,240,255,0.2); border-radius: 4px; padding: 2px;">
+              <button type="button" class="btn btn-sm btn-cyan" id="btnAliensGrid" onclick="setAliensView('grid')" style="padding: 2px 6px; font-size: 0.65rem;" title="Vista Cuadrícula">▦ Grid</button>
+              <button type="button" class="btn btn-sm" id="btnAliensList" onclick="setAliensView('list')" style="padding: 2px 6px; font-size: 0.65rem;" title="Vista Lista">☰ Lista</button>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btnNewAlien">➕</button>
+          </div>
         </div>
         <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">
           Toca un alien para proyectar su ficha de briefing en la Esfera:
         </div>
-        <div class="monster-list" id="monstersContainer"></div>
+        <div class="monster-list grid-view" id="monstersContainer"></div>
       </div>
     </div>
 
@@ -248,6 +254,7 @@
           <button class="btn btn-cyan" onclick="setSphereMode('radar')">🛰️ Radar Táctico</button>
           <button class="btn btn-gold" onclick="setSphereMode('scoring')">🏆 Puntuaciones</button>
           <button class="btn" onclick="setSphereMode('broadcast')">💬 Mensaje</button>
+          <button class="btn btn-gold" id="btnRemoteCrtToggle" onclick="toggleRemoteCrt()">📺 Filtro CRT</button>
         </div>
       </div>
 
@@ -283,12 +290,18 @@
       <div class="card">
         <div class="card-header">
           <div class="card-title">🔫 ARMERÍA DE GANTZ</div>
-          <button class="btn btn-primary btn-sm" id="btnNewWeapon">➕ NUEVA</button>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <div style="display: flex; gap: 2px; background: rgba(0,0,0,0.4); border: 1px solid rgba(0,240,255,0.2); border-radius: 4px; padding: 2px;">
+              <button type="button" class="btn btn-sm btn-cyan" id="btnWeaponsGrid" onclick="setWeaponsView('grid')" style="padding: 2px 6px; font-size: 0.65rem;" title="Vista Cuadrícula">▦ Grid</button>
+              <button type="button" class="btn btn-sm" id="btnWeaponsList" onclick="setWeaponsView('list')" style="padding: 2px 6px; font-size: 0.65rem;" title="Vista Lista">☰ Lista</button>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btnNewWeapon">➕</button>
+          </div>
         </div>
         <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">
           Proyecta armas en la Esfera o dispara sus efectos de audio en tiempo real:
         </div>
-        <div class="monster-list" id="weaponsContainer"></div>
+        <div class="monster-list grid-view" id="weaponsContainer"></div>
       </div>
     </div>
 
