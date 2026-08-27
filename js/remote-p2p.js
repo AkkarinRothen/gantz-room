@@ -79,10 +79,31 @@
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   }
 
-  function vibrate(ms = 30) {
-    if ('vibrate' in navigator) {
-      try { navigator.vibrate(ms); } catch (e) {}
-    }
+  function vibrate(msOrPattern = 30) {
+    try {
+      if (window.AndroidBridge) {
+        if (typeof msOrPattern === 'string') {
+          window.AndroidBridge.vibratePattern(msOrPattern);
+          return;
+        } else if (typeof msOrPattern === 'number') {
+          window.AndroidBridge.vibrate(msOrPattern);
+          return;
+        }
+      }
+      if ('vibrate' in navigator) {
+        if (typeof msOrPattern === 'string') {
+          if (msOrPattern === 'xgun') navigator.vibrate([25, 2500, 80, 50, 160, 60, 320]);
+          else if (msOrPattern === 'ygun') navigator.vibrate([40, 50, 40, 50, 140]);
+          else if (msOrPattern === 'suit') navigator.vibrate([180, 60, 320]);
+          else if (msOrPattern === 'sword') navigator.vibrate([30, 40, 80]);
+          else if (msOrPattern === 'sphere') navigator.vibrate([100, 50, 160, 50, 240, 50, 400]);
+          else if (msOrPattern === 'heartbeat') navigator.vibrate([70, 120, 130]);
+          else navigator.vibrate(30);
+        } else {
+          navigator.vibrate(msOrPattern);
+        }
+      }
+    } catch (e) {}
   }
 
   window.switchTab = function(tabId) {
@@ -819,7 +840,8 @@
 
   // 5. MODES & SOUNDBOARD
   window.setSphereMode = function(mode) {
-    vibrate(30);
+    if (mode === 'open') vibrate('sphere');
+    else vibrate(30);
     sendDisplay({ type: 'SET_MODE', mode });
   };
 
