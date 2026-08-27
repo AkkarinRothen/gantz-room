@@ -2,6 +2,7 @@
 class GantzAudioEngine {
   constructor() {
     this.ctx = null;
+    this.masterGain = null;
     this.isMuted = false;
     this.radioPlaying = false;
     this.radioTimeouts = [];
@@ -11,10 +12,32 @@ class GantzAudioEngine {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       this.ctx = new AudioCtx();
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.gain.setValueAtTime(1.0, this.ctx.currentTime);
+      this.masterGain.connect(this.ctx.destination);
     }
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
+  }
+
+  getDestination() {
+    this.init();
+    return this.masterGain || this.ctx.destination;
+  }
+
+  setMasterVolume(vol) {
+    this.init();
+    const clamped = Math.max(0, Math.min(1, parseFloat(vol) || 0));
+    if (this.masterGain) {
+      this.masterGain.gain.setValueAtTime(clamped, this.ctx.currentTime);
+    }
+  }
+
+  stopAll() {
+    this.radioPlaying = false;
+    this.radioTimeouts.forEach(t => clearTimeout(t));
+    this.radioTimeouts = [];
   }
 
   playClick() {
@@ -31,7 +54,7 @@ class GantzAudioEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.03);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.getDestination());
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.035);
@@ -51,7 +74,7 @@ class GantzAudioEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.03);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.getDestination());
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.035);
@@ -70,7 +93,7 @@ class GantzAudioEngine {
     subGain.gain.setValueAtTime(0.25, now);
     subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
     subOsc.connect(subGain);
-    subGain.connect(this.ctx.destination);
+    subGain.connect(this.getDestination());
     subOsc.start(now);
     subOsc.stop(now + 1.5);
 
@@ -83,7 +106,7 @@ class GantzAudioEngine {
       gain.gain.setValueAtTime(0.15, now + idx * 0.08);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 1.2);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getDestination());
       osc.start(now + idx * 0.08);
       osc.stop(now + idx * 0.08 + 1.3);
     });
@@ -102,7 +125,7 @@ class GantzAudioEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.getDestination());
 
     osc.start(now);
     osc.stop(now + 0.16);
@@ -122,7 +145,7 @@ class GantzAudioEngine {
       gain.gain.setValueAtTime(0.2, t);
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getDestination());
       osc.start(t);
       osc.stop(t + 0.2);
     }
@@ -145,7 +168,7 @@ class GantzAudioEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.getDestination());
     osc.start(now);
     osc.stop(now + 1.85);
 
@@ -164,7 +187,7 @@ class GantzAudioEngine {
     noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.7);
 
     whiteNoise.connect(noiseGain);
-    noiseGain.connect(this.ctx.destination);
+    noiseGain.connect(this.getDestination());
     whiteNoise.start(now + 0.6);
     whiteNoise.stop(now + 1.75);
   }
@@ -188,7 +211,7 @@ class GantzAudioEngine {
       gain.gain.setValueAtTime(0.2, now + offset);
       gain.gain.exponentialRampToValueAtTime(0.001, now + offset + n.d);
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getDestination());
       osc.start(now + offset);
       osc.stop(now + offset + n.d + 0.05);
       offset += n.d * 0.8;
@@ -229,7 +252,7 @@ class GantzAudioEngine {
         gain.gain.exponentialRampToValueAtTime(0.001, now + item.d);
 
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(this.getDestination());
 
         osc.start(now);
         osc.stop(now + item.d + 0.05);
@@ -270,7 +293,7 @@ class GantzAudioEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.getDestination());
     osc.start(now);
     osc.stop(now + 0.42);
 
@@ -290,7 +313,7 @@ class GantzAudioEngine {
       boomGain.gain.exponentialRampToValueAtTime(0.001, boomTime + 0.85);
 
       boomOsc.connect(boomGain);
-      boomGain.connect(this.ctx.destination);
+      boomGain.connect(this.getDestination());
       boomOsc.start(boomTime);
       boomOsc.stop(boomTime + 0.9);
 
@@ -308,7 +331,7 @@ class GantzAudioEngine {
       noiseGain.gain.exponentialRampToValueAtTime(0.001, boomTime + 0.7);
 
       noise.connect(noiseGain);
-      noiseGain.connect(this.ctx.destination);
+      noiseGain.connect(this.getDestination());
       noise.start(boomTime);
       noise.stop(boomTime + 0.75);
     }, 2500);
@@ -333,7 +356,7 @@ class GantzAudioEngine {
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.getDestination());
       osc.start(t);
       osc.stop(t + 0.08);
     }
@@ -349,7 +372,7 @@ class GantzAudioEngine {
     warpGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
 
     warpOsc.connect(warpGain);
-    warpGain.connect(this.ctx.destination);
+    warpGain.connect(this.getDestination());
     warpOsc.start(now + 0.3);
     warpOsc.stop(now + 1.25);
   }
@@ -371,7 +394,7 @@ class GantzAudioEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.getDestination());
     osc.start(now);
     osc.stop(now + 1.0);
   }
@@ -393,7 +416,7 @@ class GantzAudioEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.getDestination());
     osc.start(now);
     osc.stop(now + 0.38);
 
@@ -411,7 +434,7 @@ class GantzAudioEngine {
     noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
     noise.connect(noiseGain);
-    noiseGain.connect(this.ctx.destination);
+    noiseGain.connect(this.getDestination());
     noise.start(now + 0.05);
     noise.stop(now + 0.28);
   }

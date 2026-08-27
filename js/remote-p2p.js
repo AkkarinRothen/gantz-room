@@ -865,6 +865,7 @@
       const status = h.status || 'alive';
       const statusLabel = status === 'dead' ? '💀 MUERTO' : (status === 'liberated' ? '✨ LIBERADO' : '🟢 VIVO');
       const statusColor = status === 'dead' ? '#ff003c' : (status === 'liberated' ? '#ffd700' : '#00ff66');
+      const suit = h.suitIntegrity !== undefined ? h.suitIntegrity : 100;
 
       card.innerHTML = `
         <div class="hunter-header-row">
@@ -879,7 +880,17 @@
           </div>
           <div class="hunter-points-badge">+${h.points || 0} pts</div>
         </div>
-        <div class="hunter-controls-row">
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 4px 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,240,255,0.15); border-radius: 4px; font-size: 0.72rem;">
+          <span style="color: #94a3b8; font-weight: bold;">🦺 Traje:</span>
+          <div style="display: flex; gap: 4px;">
+            <button type="button" class="btn btn-sm" onclick="setHunterSuit(${idx}, 100)" style="font-size: 0.65rem; padding: 2px 6px; ${suit === 100 ? 'border-color: #00ff66; color: #00ff66; background: rgba(0,255,102,0.15);' : 'opacity: 0.5;'}">🛡️ 100%</button>
+            <button type="button" class="btn btn-sm" onclick="setHunterSuit(${idx}, 50)" style="font-size: 0.65rem; padding: 2px 6px; ${suit === 50 ? 'border-color: #00f0ff; color: #00f0ff; background: rgba(0,240,255,0.15);' : 'opacity: 0.5;'}">⚡ 50%</button>
+            <button type="button" class="btn btn-sm" onclick="setHunterSuit(${idx}, 0)" style="font-size: 0.65rem; padding: 2px 6px; ${suit === 0 ? 'border-color: #ff003c; color: #ff003c; background: rgba(255,0,60,0.15);' : 'opacity: 0.5;'}">💥 Roto</button>
+          </div>
+        </div>
+
+        <div class="hunter-controls-row" style="margin-top: 8px;">
           <button class="btn btn-sm" onclick="adjustHunterScore(${idx}, -1)">-1</button>
           <button class="btn btn-sm btn-primary" onclick="adjustHunterScore(${idx}, 1)">+1</button>
           <button class="btn btn-sm btn-cyan" onclick="adjustHunterScore(${idx}, 5)">+5</button>
@@ -896,6 +907,14 @@
       huntersContainer.appendChild(card);
     });
   }
+
+  window.setHunterSuit = function(idx, level) {
+    vibrate(20);
+    if (!appState || !appState.hunters || !appState.hunters[idx]) return;
+    appState.hunters[idx].suitIntegrity = level;
+    sendDisplay({ type: 'UPDATE_HUNTERS', hunters: appState.hunters });
+    renderHunters();
+  };
 
   window.toggleHunterStatus = function(idx) {
     vibrate(25);
@@ -1075,6 +1094,32 @@
     sendDisplay({ type: 'BROADCAST_MESSAGE', message: text });
   };
 
+  // ==================== 1-TOUCH SESSION MACROS ====================
+  window.macroStartMission = function() {
+    vibrate(60);
+    log('🚀 Ejecutando Macro: INICIAR CACERÍA');
+    if (appState && appState.timer) {
+      if (appState.timer.remainingSeconds <= 0) appState.timer.remainingSeconds = 3600;
+      appState.timer.isRunning = true;
+    }
+    renderTimer();
+    sendDisplay({ type: 'TRIGGER_SOUND', sound: 'transfer' });
+    sendDisplay({ type: 'TIMER_CONTROL', action: 'start' });
+    sendDisplay({ type: 'SET_MODE', mode: 'mission' });
+  };
+
+  window.macroEndMission = function() {
+    vibrate(60);
+    log('🏁 Ejecutando Macro: FIN DE MISIÓN');
+    if (appState && appState.timer) {
+      appState.timer.isRunning = false;
+    }
+    renderTimer();
+    sendDisplay({ type: 'TIMER_CONTROL', action: 'pause' });
+    sendDisplay({ type: 'TRIGGER_SOUND', sound: 'score' });
+    sendDisplay({ type: 'SET_MODE', mode: 'scoring' });
+  };
+
   // 5. MODES & SOUNDBOARD
   window.setSphereMode = function(mode) {
     if (mode === 'open') vibrate('sphere');
@@ -1085,6 +1130,35 @@
   window.triggerSFX = function(sound) {
     vibrate(35);
     sendDisplay({ type: 'TRIGGER_SOUND', sound });
+  };
+
+  const remoteVolumeSlider = document.getElementById('remoteVolumeSlider');
+  const remoteVolumeValue = document.getElementById('remoteVolumeValue');
+  const btnRemoteMuteToggle = document.getElementById('btnRemoteMuteToggle');
+  let isRemoteMuted = false;
+
+  if (remoteVolumeSlider) {
+    remoteVolumeSlider.addEventListener('input', (e) => {
+      const vol = parseFloat(e.target.value);
+      if (remoteVolumeValue) remoteVolumeValue.textContent = Math.round(vol * 100) + '%';
+      sendDisplay({ type: 'SET_VOLUME', volume: vol });
+    });
+  }
+
+  if (btnRemoteMuteToggle) {
+    btnRemoteMuteToggle.addEventListener('click', () => {
+      vibrate(20);
+      isRemoteMuted = !isRemoteMuted;
+      btnRemoteMuteToggle.textContent = isRemoteMuted ? '🔊 Activar' : '🔇 Silenciar';
+      const vol = isRemoteMuted ? 0 : (remoteVolumeSlider ? parseFloat(remoteVolumeSlider.value) : 1);
+      sendDisplay({ type: 'SET_VOLUME', volume: vol });
+    });
+  }
+
+  window.stopRemoteAudio = function() {
+    vibrate(30);
+    log('🛑 Deteniendo todos los audios de la Esfera');
+    sendDisplay({ type: 'STOP_ALL_AUDIO' });
   };
 
   window.forceReconnectGantz = function() {

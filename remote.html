@@ -129,43 +129,72 @@
           <button class="btn" onclick="adjustTimer(300)">+5m</button>
         </div>
       </div>
+      <div class="timer-adjust-grid">
+        <button class="btn-adjust" onclick="adjustTimer(60)">+1m</button>
+        <button class="btn-adjust" onclick="adjustTimer(300)">+5m</button>
+        <button class="btn-adjust" onclick="adjustTimer(600)">+10m</button>
+        <button class="btn-adjust danger" onclick="adjustTimer(-60)">-1m</button>
+        <button class="btn-adjust danger" onclick="adjustTimer(-300)">-5m</button>
+        <button class="btn-adjust danger" onclick="adjustTimer(-600)">-10m</button>
+      </div>
 
-      <!-- Presets -->
-      <div class="card">
+      <!-- Quick Presets -->
+      <div class="card" style="margin-top: 14px;">
         <div class="card-header">
-          <div class="card-title">🎯 PRESETS DE MISIÓN</div>
+          <div class="card-title">⏱️ PRESETS DE TIEMPO</div>
         </div>
         <div class="btn-grid-4">
-          <button class="btn btn-cyan" onclick="setTimerPreset(3600)">60 Min</button>
-          <button class="btn btn-cyan" onclick="setTimerPreset(1800)">30 Min</button>
-          <button class="btn btn-cyan" onclick="setTimerPreset(900)">15 Min</button>
-          <button class="btn btn-danger" onclick="setTimerPreset(300)">5 Min</button>
+          <button class="btn" onclick="setTimerPreset(1800)">30m</button>
+          <button class="btn" onclick="setTimerPreset(2700)">45m</button>
+          <button class="btn btn-primary" onclick="setTimerPreset(3600)">60m</button>
+          <button class="btn" onclick="setTimerPreset(5400)">90m</button>
+        </div>
+      </div>
+
+      <!-- 1-Touch Session Macros -->
+      <div class="card" style="margin-top: 14px;">
+        <div class="card-header">
+          <div class="card-title">⚡ MACROS DE SESIÓN (1 TOQUE)</div>
+        </div>
+        <div class="btn-grid-2">
+          <button class="btn btn-primary" onclick="macroStartMission()" style="background: linear-gradient(135deg, rgba(0,255,102,0.2) 0%, rgba(0,255,102,0.4) 100%); font-weight: bold; border-color: #00ff66;">
+            🚀 INICIAR CACERÍA
+          </button>
+          <button class="btn btn-gold" onclick="macroEndMission()" style="background: linear-gradient(135deg, rgba(255,215,0,0.2) 0%, rgba(255,215,0,0.4) 100%); font-weight: bold; border-color: #ffd700;">
+            🏁 FIN DE MISIÓN
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- ==================== TAB 2: MONSTERS & TEMPLATES ==================== -->
+    <!-- ==================== TAB 2: ALIEN TARGETS ==================== -->
     <div class="tab-panel" id="tabAliens">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">👾 OBJETIVOS & PLANTILLAS</div>
+          <div class="card-title">👾 OBJETIVOS ALIENÍGENAS</div>
           <button class="btn btn-primary btn-sm" id="btnNewAlien">➕ NUEVO</button>
+        </div>
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">
+          Toca un alien para proyectar su ficha de briefing en la Esfera:
         </div>
         <div class="monster-list" id="monstersContainer"></div>
       </div>
     </div>
 
-    <!-- ==================== TAB 3: HUNTERS & SCOREPAD ==================== -->
+    <!-- ==================== TAB 3: HUNTERS & 100 PTS ==================== -->
     <div class="tab-panel" id="tabHunters">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">🏆 EVALUACIÓN DE CAZADORES</div>
-          <button class="btn btn-cyan btn-sm" id="btnAddHunter">➕ JUGADOR</button>
+          <div class="card-title">🏆 CAZADORES Y PUNTUACIÓN</div>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn btn-sm" id="btnAddHunter">➕ Cazador</button>
+            <button class="btn btn-primary btn-sm" id="btnBroadcastScoring">📺 Evaluar</button>
+          </div>
         </div>
-        <div id="huntersContainer"></div>
-        <button class="btn btn-gold" id="btnBroadcastScoring" style="width: 100%; margin-top: 10px;">
-          📢 TRANSMITIR EVALUACIÓN A LA ESFERA
-        </button>
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">
+          Ajusta puntos, estado vital y traje G-Suit de cada jugador:
+        </div>
+        <div class="hunter-grid" id="huntersContainer"></div>
       </div>
     </div>
 
@@ -181,18 +210,24 @@
         </button>
 
         <div class="preset-chip-grid">
-          <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 10px;">Frases icónicas de Gantz:</div>
+          <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 10px;">Frases icónicas del Manga:</div>
           <div class="preset-chip" onclick="quickSendMsg('LA HABÉIS PALMADO. AHORA VUESTRAS VIDAS ME PERTENECEN.')">
             "LA HABÉIS PALMADO. AHORA VUESTRAS VIDAS ME PERTENECEN."
           </div>
           <div class="preset-chip" onclick="quickSendMsg('¡MOVED EL TRASERO O MORIRÉIS TODOS!')">
             "¡MOVED EL TRASERO O MORIRÉIS TODOS!"
           </div>
-          <div class="preset-chip" onclick="quickSendMsg('TIEMPO AGOTADO. TRANSFERENCIA FINALIZADA.')">
-            "TIEMPO AGOTADO. TRANSFERENCIA FINALIZADA."
+          <div class="preset-chip" onclick="quickSendMsg('CAZAD A ESTE CABRÓN ANTES DE QUE OS EXPLOTE LA CABEZA.')">
+            "CAZAD A ESTE CABRÓN ANTES DE QUE OS EXPLOTE LA CABEZA."
           </div>
-          <div class="preset-chip" onclick="quickSendMsg('EL ALIEN HA SIDO ELIMINADO. PREPARANDO EVALUACIÓN.')">
-            "EL ALIEN HA SIDO ELIMINADO. PREPARANDO EVALUACIÓN."
+          <div class="preset-chip" onclick="quickSendMsg('HABÉIS SIDO UNOS INÚTILES ESTA NOCHE.')">
+            "HABÉIS SIDO UNOS INÚTILES ESTA NOCHE."
+          </div>
+          <div class="preset-chip" onclick="quickSendMsg('¡¡SALID DEL PERÍMETRO Y VUESTRA CABEZA VOLARÁ EN 10 SEGUNDOS!!')">
+            "¡¡SALID DEL PERÍMETRO Y VUESTRA CABEZA VOLARÁ EN 10 SEGUNDOS!!"
+          </div>
+          <div class="preset-chip" onclick="quickSendMsg('MISIÓN TERMINADA. VOLVED A VUESTRAS PATÉTICAS VIDAS.')">
+            "MISIÓN TERMINADA. VOLVED A VUESTRAS PATÉTICAS VIDAS."
           </div>
         </div>
       </div>
@@ -209,6 +244,7 @@
           <button class="btn btn-cyan" onclick="setSphereMode('open')">🔓 Abrir Esfera</button>
           <button class="btn btn-primary" onclick="setSphereMode('briefing')">🎯 Briefing</button>
           <button class="btn btn-danger" onclick="setSphereMode('mission')">⏱️ Misión / Timer</button>
+          <button class="btn btn-cyan" onclick="setSphereMode('radar')">🛰️ Radar Táctico</button>
           <button class="btn btn-gold" onclick="setSphereMode('scoring')">🏆 Puntuaciones</button>
           <button class="btn" onclick="setSphereMode('broadcast')">💬 Mensaje</button>
         </div>
@@ -216,7 +252,19 @@
 
       <div class="card">
         <div class="card-header">
-          <div class="card-title">🔊 DISPARADOR DE AUDIO (SFX)</div>
+          <div class="card-title">🎚️ CONTROL DE AUDIO Y VOLUMEN</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+          <span style="font-size: 1.1rem;">🔊</span>
+          <input type="range" id="remoteVolumeSlider" min="0" max="1" step="0.05" value="1" style="flex: 1; accent-color: var(--gantz-cyan);">
+          <span id="remoteVolumeValue" style="font-size: 0.8rem; font-family: monospace; min-width: 42px; color: var(--gantz-cyan);">100%</span>
+        </div>
+        <div class="btn-grid-2" style="margin-bottom: 12px;">
+          <button class="btn btn-sm" id="btnRemoteMuteToggle">🔇 Silenciar</button>
+          <button class="btn btn-sm btn-danger" onclick="stopRemoteAudio()">🛑 Detener Audios</button>
+        </div>
+        <div class="card-header" style="border-top: 1px solid rgba(0,240,255,0.15); padding-top: 10px;">
+          <div class="card-title" style="font-size: 0.75rem;">DISPARADORES DE EFECTOS (SFX):</div>
         </div>
         <div class="btn-grid-2">
           <button class="btn btn-gold" onclick="triggerSFX('radio')">📻 Radio Taisou</button>

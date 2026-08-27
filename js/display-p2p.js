@@ -255,6 +255,7 @@
     viewScoring.style.display = 'none';
     viewBroadcast.style.display = 'none';
     viewWeapon.style.display = 'none';
+    if (viewRadar) viewRadar.style.display = 'none';
     if (view100Pts) view100Pts.style.display = 'none';
     
     sphereAssembly.classList.remove('is-open', 'active-mission');
@@ -300,8 +301,8 @@
 
           if (briefingLikes) briefingLikes.textContent = (alien.likes || 'LAS COSAS RARAS').toUpperCase();
 
-          if (alien.dislikes && alien.dislikes.trim()) {
-            if (briefingDislikesWrap) briefingDislikesWrap.style.display = 'flex';
+          if (alien.dislikes) {
+            if (briefingDislikesWrap) briefingDislikesWrap.style.display = 'block';
             if (briefingDislikes) briefingDislikes.textContent = alien.dislikes.toUpperCase();
           } else {
             if (briefingDislikesWrap) briefingDislikesWrap.style.display = 'none';
@@ -343,6 +344,14 @@
             else window.GantzAudio.playClick();
           }
         }
+        break;
+
+      case 'radar':
+        if (viewRadar) viewRadar.style.display = 'flex';
+        if (radarTargetLabel && appState.currentAlien) {
+          radarTargetLabel.textContent = `OBJETIVO: ${(appState.currentAlien.name || 'ALIEN').toUpperCase()}`;
+        }
+        if (window.GantzAudio) window.GantzAudio.playClick();
         break;
 
       case 'mission':
@@ -390,10 +399,15 @@
     hunters.forEach((h, idx) => {
       const row = document.createElement('div');
       row.className = 'score-row';
+      const suit = h.suitIntegrity !== undefined ? h.suitIntegrity : 100;
+      const suitColor = suit > 50 ? '#00ff66' : (suit > 0 ? '#00f0ff' : '#ff003c');
+      const suitLabel = suit === 100 ? '🛡️ Traje 100%' : (suit === 50 ? '⚡ Traje Fisurado (50%)' : '💥 Traje Roto (0%)');
+      const isDead = h.status === 'dead';
+
       row.innerHTML = `
         <div class="hunter-name-col">
-          <div class="hunter-real-name">${idx + 1}. ${h.name}</div>
-          <div class="hunter-gantz-nick">"${h.nickname || 'Novato'}"</div>
+          <div class="hunter-real-name">${idx + 1}. ${escapeHtml(h.name)} ${isDead ? '<span style="color: #ff003c; font-size: 0.72rem; font-weight: bold;">[💀 MUERTO]</span>' : ''}</div>
+          <div class="hunter-gantz-nick">"${escapeHtml(h.nickname || 'Novato')}" • <span style="color: ${suitColor}; font-size: 0.72rem;">${suitLabel}</span></div>
         </div>
         <div class="hunter-points-col">
           <div>+${h.points || 0} pts</div>
@@ -592,6 +606,20 @@
           else if (msg.sound === 'ygun') window.GantzAudio.playYGun();
           else if (msg.sound === 'suit') window.GantzAudio.playSuitSurge();
           else if (msg.sound === 'sword') window.GantzAudio.playSwordSlash();
+        }
+        break;
+
+      case 'SET_VOLUME':
+        if (window.GantzAudio && typeof window.GantzAudio.setMasterVolume === 'function') {
+          window.GantzAudio.setMasterVolume(msg.volume);
+          log(`Volumen maestro ajustado a ${Math.round(msg.volume * 100)}%`);
+        }
+        break;
+
+      case 'STOP_ALL_AUDIO':
+        if (window.GantzAudio && typeof window.GantzAudio.stopAll === 'function') {
+          window.GantzAudio.stopAll();
+          log('Todos los audios detenidos por el Master');
         }
         break;
     }
