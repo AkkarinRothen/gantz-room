@@ -266,6 +266,22 @@
         <span>🤖</span> DESCARGAR APP ANDROID (.APK)
       </a>
 
+      <!-- Room Management & Persistence Controls -->
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(0,240,255,0.2); text-align: left;">
+        <div style="font-size: 0.75rem; color: var(--gantz-cyan); font-weight: bold; margin-bottom: 6px;">⚙️ GESTIÓN DE SALA:</div>
+        <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+          <input type="text" id="customDisplayRoomInput" placeholder="Ej: MESA1 o GANTZ-MESA1" style="flex: 1; font-size: 0.8rem; padding: 6px 8px; background: rgba(0,0,0,0.6); border: 1px solid rgba(0,240,255,0.4); color: #fff; border-radius: 4px; font-family: 'Share Tech Mono', monospace;">
+          <button class="hud-btn" id="btnSetCustomRoom" style="font-size: 0.75rem; padding: 6px 10px; background: rgba(0,240,255,0.15);">ESTABLECER</button>
+        </div>
+        <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+          <button class="hud-btn" id="btnGenerateNewRoom" style="width: 100%; font-size: 0.75rem; padding: 6px 10px; border-color: var(--gantz-gold); color: var(--gantz-gold); background: rgba(255,215,0,0.1);">🔄 GENERAR NUEVA SALA ALEATORIA</button>
+        </div>
+        <div id="displaySavedRoomsWrap" style="margin-top: 8px;">
+          <div style="font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px;">📜 SALAS RECIENTES:</div>
+          <div id="displaySavedRoomsList" style="display: flex; flex-wrap: wrap; gap: 4px; max-height: 70px; overflow-y: auto;"></div>
+        </div>
+      </div>
+
       <button class="qr-close-btn" id="btnCloseQR">CERRAR</button>
     </div>
   </div>

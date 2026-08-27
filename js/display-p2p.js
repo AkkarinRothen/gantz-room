@@ -597,9 +597,104 @@
     }
   }
 
+  function cleanRoomCode(input) {
+    if (!input) return '';
+    let str = String(input).trim();
+    if (str.includes('room=')) {
+      try {
+        const url = new URL(str, window.location.origin);
+        str = url.searchParams.get('room') || str;
+      } catch (e) {
+        const m = str.match(/room=([a-zA-Z0-9_-]+)/i);
+        if (m) str = m[1];
+      }
+    }
+    let upper = str.toUpperCase().replace(/^GANTZ-?/i, '').trim();
+    if (!upper) return '';
+    return 'GANTZ-' + upper;
+  }
+
+  function resolveRoomId() {
+    // 1. URL search param (?room=...)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomParam = urlParams.get('room');
+      if (roomParam) {
+        const clean = cleanRoomCode(roomParam);
+        if (clean) return clean;
+      }
+    } catch (e) {}
+
+    // 2. LocalStorage persistence
+    try {
+      const saved = localStorage.getItem('gantz_display_room_id');
+      if (saved) {
+        const clean = cleanRoomCode(saved);
+        if (clean) return clean;
+      }
+    } catch (e) {}
+
+    // 3. Fallback to generated ID
+    return generateRoomId();
+  }
+
+  function saveDisplayRoom(code) {
+    try {
+      localStorage.setItem('gantz_display_room_id', code);
+      let list = JSON.parse(localStorage.getItem('gantz_display_saved_rooms') || '[]');
+      list = [code, ...list.filter(r => r !== code)].slice(0, 8);
+      localStorage.setItem('gantz_display_saved_rooms', JSON.stringify(list));
+    } catch (e) {}
+    renderDisplaySavedRooms();
+  }
+
+  function renderDisplaySavedRooms() {
+    const listEl = document.getElementById('displaySavedRoomsList');
+    if (!listEl) return;
+    try {
+      const list = JSON.parse(localStorage.getItem('gantz_display_saved_rooms') || '[]');
+      if (list.length === 0) {
+        listEl.innerHTML = '<span style="font-size: 0.68rem; color: #64748b; font-style: italic;">Sin salas anteriores</span>';
+        return;
+      }
+      listEl.innerHTML = list.map(r => {
+        const isCurrent = r === roomId;
+        return `<button type="button" class="hud-btn" onclick="window.switchGantzRoom('${r}')" style="font-size: 0.68rem; padding: 2px 6px; ${isCurrent ? 'border-color: #00ff66; color: #00ff66;' : 'border-color: rgba(0,240,255,0.3); color: #cbd5e1;'}">${r}</button>`;
+      }).join('');
+    } catch (e) {}
+  }
+
+  window.switchGantzRoom = function(targetId) {
+    const clean = cleanRoomCode(targetId);
+    if (!clean) return;
+
+    log(`Cambiando sala a [${clean}]...`);
+    if (peer) {
+      try { peer.destroy(); } catch (e) {}
+      peer = null;
+    }
+    activeConnections = [];
+
+    roomId = clean;
+    saveDisplayRoom(roomId);
+
+    // Update browser URL query without reload
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.set('room', roomId);
+      window.history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
+    initMultiTransport(true);
+  };
+
   // Multi-layer Transport Initialization
-  function initMultiTransport() {
-    roomId = generateRoomId();
+  function initMultiTransport(keepId = false) {
+    if (!keepId || !roomId) {
+      roomId = resolveRoomId();
+    }
+    saveDisplayRoom(roomId);
+
     hudRoomPin.textContent = `SALA: ${roomId}`;
     qrPinDisplay.textContent = roomId;
 
@@ -612,49 +707,61 @@
     currentUrl.searchParams.set('room', roomId);
     const remoteUrl = currentUrl.toString();
 
+    // Update page URL query to preserve the room
+    try {
+      const pageUrl = new URL(window.location.href);
+      pageUrl.searchParams.set('room', roomId);
+      window.history.replaceState(null, '', pageUrl.toString());
+    } catch (e) {}
+
     qrUrlText.textContent = remoteUrl;
     renderQRCode(remoteUrl);
+    renderDisplaySavedRooms();
 
-    log(`Sala iniciada con código [${roomId}]`);
+    log(`Sala iniciada con código persistente [${roomId}]`);
 
     // Layer 1: Try Local WebSocket if on localhost
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
       try {
         const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        localWS = new WebSocket(`${wsProtocol}//${location.host}`);
-        
-        localWS.onopen = () => {
-          logNet('⚡ Servidor WebSocket Local Conectado (preview-server)');
-          if (window.GantzLogger) window.GantzLogger.updateState('transport', 'WebSocket Local');
-        };
+        if (!localWS || localWS.readyState !== WebSocket.OPEN) {
+          localWS = new WebSocket(`${wsProtocol}//${location.host}`);
+          
+          localWS.onopen = () => {
+            logNet('⚡ Servidor WebSocket Local Conectado (preview-server)');
+            if (window.GantzLogger) window.GantzLogger.updateState('transport', 'WebSocket Local');
+          };
 
-        localWS.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            handleRemoteMessage(data);
-          } catch (e) {}
-        };
+          localWS.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              handleRemoteMessage(data);
+            } catch (e) {}
+          };
 
-        localWS.onerror = () => {
-          logWarn('WebSocket local no disponible, usando WebRTC/BroadcastChannel');
-        };
+          localWS.onerror = () => {
+            logWarn('WebSocket local no disponible, usando WebRTC/BroadcastChannel');
+          };
+        }
       } catch (e) {}
     }
 
     // Layer 2: BroadcastChannel for Cross-Tab Sync
     try {
       if (typeof BroadcastChannel !== 'undefined') {
-        broadcastChan = new BroadcastChannel('gantz_sync_channel');
-        broadcastChan.onmessage = (event) => {
-          handleRemoteMessage(event.data);
-        };
+        if (!broadcastChan) {
+          broadcastChan = new BroadcastChannel('gantz_sync_channel');
+          broadcastChan.onmessage = (event) => {
+            handleRemoteMessage(event.data);
+          };
+        }
         logNet('⚡ BroadcastChannel inicializado');
       }
     } catch (e) {}
 
     // Layer 3: PeerJS WebRTC for Cloud P2P
     try {
-      logNet('Conectando a broker PeerJS...');
+      logNet(`Conectando a broker PeerJS con ID [${roomId.toLowerCase()}]...`);
       if (window.GantzLogger) window.GantzLogger.updateState('brokerStatus', 'Conectando...');
 
       peer = new Peer(roomId.toLowerCase(), {
@@ -733,7 +840,8 @@
         logError('Error en PeerJS Broker:', err);
         if (window.GantzLogger) window.GantzLogger.updateState('brokerStatus', 'Error: ' + err.type);
         if (err.type === 'unavailable-id') {
-          setTimeout(initMultiTransport, 1000);
+          logWarn('El ID de sala ya está en uso. Generando nuevo ID...');
+          setTimeout(() => window.switchGantzRoom(generateRoomId()), 1000);
         }
       });
     } catch (err) {
@@ -755,11 +863,41 @@
     } catch (e) {}
   }
 
+  // Room Management UI Listeners in QR Modal
+  const btnGenerateNewRoom = document.getElementById('btnGenerateNewRoom');
+  if (btnGenerateNewRoom) {
+    btnGenerateNewRoom.addEventListener('click', () => {
+      window.switchGantzRoom(generateRoomId());
+    });
+  }
+
+  const btnSetCustomRoom = document.getElementById('btnSetCustomRoom');
+  const customDisplayRoomInput = document.getElementById('customDisplayRoomInput');
+  if (btnSetCustomRoom && customDisplayRoomInput) {
+    btnSetCustomRoom.addEventListener('click', () => {
+      const val = customDisplayRoomInput.value.trim();
+      if (val) {
+        window.switchGantzRoom(val);
+        customDisplayRoomInput.value = '';
+      }
+    });
+
+    customDisplayRoomInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        const val = customDisplayRoomInput.value.trim();
+        if (val) {
+          window.switchGantzRoom(val);
+          customDisplayRoomInput.value = '';
+        }
+      }
+    });
+  }
+
   window.forceReconnectGantz = function() {
     log('Forzando reinicio de conexiones de red...');
     if (peer) try { peer.destroy(); } catch (e) {}
     if (localWS) try { localWS.close(); } catch (e) {}
-    initMultiTransport();
+    initMultiTransport(true);
   };
 
   // Boot
