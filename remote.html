@@ -174,6 +174,18 @@
           <button class="btn" onclick="triggerSFX('click')">🔘 Clic Digital</button>
         </div>
       </div>
+    <!-- ==================== TAB 6: WEAPONS & ARMORY ==================== -->
+    <div class="tab-panel" id="tabWeapons">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔫 ARMERÍA DE GANTZ</div>
+          <button class="btn btn-primary btn-sm" id="btnNewWeapon">➕ NUEVA</button>
+        </div>
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">
+          Proyecta armas en la Esfera o dispara sus efectos de audio en tiempo real:
+        </div>
+        <div class="monster-list" id="weaponsContainer"></div>
+      </div>
     </div>
 
   </main>
@@ -187,6 +199,10 @@
     <button class="tab-btn" onclick="switchTab('tabAliens')">
       <span class="tab-icon">👾</span>
       <span>Objetivos</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tabWeapons')">
+      <span class="tab-icon">🔫</span>
+      <span>Armas</span>
     </button>
     <button class="tab-btn" onclick="switchTab('tabHunters')">
       <span class="tab-icon">🏆</span>
@@ -266,9 +282,69 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: WEAPON CREATOR / EDITOR ==================== -->
+  <div class="modal-overlay" id="weaponModal">
+    <div class="modal-content">
+      <div class="card-header">
+        <div class="card-title" id="weaponModalTitle">🔫 EDITAR ARMA</div>
+        <button class="btn btn-sm btn-danger" onclick="closeWeaponModal()">✕</button>
+      </div>
+
+      <form id="weaponForm">
+        <input type="hidden" id="weaponFormId">
+        
+        <div class="form-group">
+          <label class="form-label">Nombre del Arma / Equipo</label>
+          <input type="text" class="form-input" id="weaponFormName" required placeholder="Ej: Z-Gun (Cañón Gravitatorio)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Icono Emoji</label>
+          <input type="text" class="form-input" id="weaponFormIcon" value="🔫" maxlength="4">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Categoría</label>
+          <input type="text" class="form-input" id="weaponFormCategory" placeholder="Ej: Arma Pesada de 100 Puntos">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Alcance / Rango</label>
+          <input type="text" class="form-input" id="weaponFormRange" placeholder="Ej: 50m">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Efecto Sonoro</label>
+          <select class="form-input" id="weaponFormSound">
+            <option value="xgun">X-Gun (Láser + Explosión retardada)</option>
+            <option value="ygun">Y-Gun (Anclajes + Teletransporte)</option>
+            <option value="suit">G-Suit (Sobrecarga servo)</option>
+            <option value="sword">Katana (Corte extensible)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Mecánica / Reglas</label>
+          <textarea class="form-textarea" id="weaponFormMechanics" rows="2" placeholder="Reglas del arma..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cita / Frase</label>
+          <input type="text" class="form-input" id="weaponFormQuote" placeholder="Frase de Gantz...">
+        </div>
+
+        <div class="btn-grid-2" style="margin-top: 16px;">
+          <button type="button" class="btn" onclick="closeWeaponModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Arma</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="js/logger.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="data/aliens.js"></script>
+  <script src="data/weapons.js"></script>
   <script src="js/remote-p2p.js"></script>
 </body>
 </html>

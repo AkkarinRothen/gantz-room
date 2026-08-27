@@ -250,6 +250,171 @@ class GantzAudioEngine {
     this.radioTimeouts.forEach(tid => clearTimeout(tid));
     this.radioTimeouts = [];
   }
+
+  // ------------------ GANTZ WEAPON SYNTHESIZERS ------------------
+  // 1. X-Gun: High energy pulse + 2.5s DELAYED EXPLOSION!
+  playXGun() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    // Shot charging & laser pop
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(3200, now + 0.12);
+    osc.frequency.exponentialRampToValueAtTime(100, now + 0.35);
+
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.42);
+
+    // Delayed 2.5 second Internal Explosion
+    setTimeout(() => {
+      if (!this.ctx) return;
+      const boomTime = this.ctx.currentTime;
+      
+      // Low bass shockwave
+      const boomOsc = this.ctx.createOscillator();
+      const boomGain = this.ctx.createGain();
+      boomOsc.type = 'sine';
+      boomOsc.frequency.setValueAtTime(140, boomTime);
+      boomOsc.frequency.exponentialRampToValueAtTime(30, boomTime + 0.8);
+
+      boomGain.gain.setValueAtTime(0.5, boomTime);
+      boomGain.gain.exponentialRampToValueAtTime(0.001, boomTime + 0.85);
+
+      boomOsc.connect(boomGain);
+      boomGain.connect(this.ctx.destination);
+      boomOsc.start(boomTime);
+      boomOsc.stop(boomTime + 0.9);
+
+      // Explosion noise crackle
+      const bufferSize = this.ctx.sampleRate * 0.7;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.35, boomTime);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, boomTime + 0.7);
+
+      noise.connect(noiseGain);
+      noiseGain.connect(this.ctx.destination);
+      noise.start(boomTime);
+      noise.stop(boomTime + 0.75);
+    }, 2500);
+  }
+
+  // 2. Y-Gun: Three latch anchor cables + warp tone
+  playYGun() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    // 3 rapid anchor clicks
+    for (let i = 0; i < 3; i++) {
+      const t = now + i * 0.08;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1800 + i * 400, t);
+      osc.frequency.exponentialRampToValueAtTime(400, t + 0.06);
+
+      gain.gain.setValueAtTime(0.25, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.08);
+    }
+
+    // Warp beam tone
+    const warpOsc = this.ctx.createOscillator();
+    const warpGain = this.ctx.createGain();
+    warpOsc.type = 'sawtooth';
+    warpOsc.frequency.setValueAtTime(300, now + 0.3);
+    warpOsc.frequency.exponentialRampToValueAtTime(3500, now + 1.1);
+
+    warpGain.gain.setValueAtTime(0.2, now + 0.3);
+    warpGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+
+    warpOsc.connect(warpGain);
+    warpGain.connect(this.ctx.destination);
+    warpOsc.start(now + 0.3);
+    warpOsc.stop(now + 1.25);
+  }
+
+  // 3. Gantz Suit: Muscle servo charge surge
+  playSuitSurge() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(80, now);
+    osc.frequency.linearRampToValueAtTime(450, now + 0.4);
+    osc.frequency.exponentialRampToValueAtTime(60, now + 0.9);
+
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 1.0);
+  }
+
+  // 4. Gantz Sword: Metallic extension & slash
+  playSwordSlash() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    // Metallic ring
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(3200, now);
+    osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.38);
+
+    // Whoosh
+    const bufferSize = this.ctx.sampleRate * 0.25;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const output = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.3, now + 0.05);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+    noise.connect(noiseGain);
+    noiseGain.connect(this.ctx.destination);
+    noise.start(now + 0.05);
+    noise.stop(now + 0.28);
+  }
 }
 
 window.GantzAudio = new GantzAudioEngine();

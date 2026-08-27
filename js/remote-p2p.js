@@ -6,11 +6,13 @@
   let broadcastChan = null;
   let roomId = null;
   let aliensList = window.GANTZ_DEFAULT_ALIENS || [];
+  let weaponsList = window.GANTZ_DEFAULT_WEAPONS || [];
   
   let defaultState = {
     mode: 'standby',
     timer: { totalSeconds: 3600, remainingSeconds: 3600, isRunning: false },
     currentAlien: aliensList[0] || null,
+    currentWeapon: weaponsList[0] || null,
     broadcastMessage: 'LA HABÉIS PALMADO. AHORA VUESTRAS VIDAS ME PERTENECEN.',
     hunters: [
       { id: 1, name: 'Kei Kurono', nickname: 'Kurono-kun', points: 0, totalPoints: 10, status: 'alive' },
@@ -44,6 +46,12 @@
   const alienModal = document.getElementById('alienModal');
   const alienForm = document.getElementById('alienForm');
   const alienModalTitle = document.getElementById('alienModalTitle');
+
+  const weaponsContainer = document.getElementById('weaponsContainer');
+  const btnNewWeapon = document.getElementById('btnNewWeapon');
+  const weaponModal = document.getElementById('weaponModal');
+  const weaponForm = document.getElementById('weaponForm');
+  const weaponModalTitle = document.getElementById('weaponModalTitle');
 
   const huntersContainer = document.getElementById('huntersContainer');
   const btnAddHunter = document.getElementById('btnAddHunter');
@@ -119,6 +127,7 @@
       case 'SYNC_STATE':
         appState = msg.state;
         aliensList = msg.aliens || aliensList;
+        weaponsList = msg.weapons || weaponsList;
         renderAll();
         break;
 
@@ -138,6 +147,11 @@
         renderMonsters();
         break;
 
+      case 'WEAPONS_LIST_UPDATED':
+        weaponsList = msg.weapons;
+        renderWeapons();
+        break;
+
       case 'HUNTERS_UPDATED':
         if (appState) appState.hunters = msg.hunters;
         renderHunters();
@@ -148,6 +162,7 @@
   function renderAll() {
     renderTimer();
     renderMonsters();
+    renderWeapons();
     renderHunters();
   }
 
@@ -492,7 +507,124 @@
     closeAlienModal();
   });
 
-  // 3. HUNTERS
+  // 3. WEAPONS & ARMORY
+  function renderWeapons() {
+    if (!weaponsContainer) return;
+    weaponsContainer.innerHTML = '';
+    const currentId = appState?.currentWeapon?.id;
+
+    weaponsList.forEach(wpn => {
+      const isSelected = wpn.id === currentId;
+      const item = document.createElement('div');
+      item.className = `monster-item ${isSelected ? 'selected' : ''}`;
+      item.innerHTML = `
+        <div style="font-size: 2.2rem; min-width: 55px; text-align: center; line-height: 1;">
+          ${wpn.icon || '🔫'}
+        </div>
+        <div class="monster-info">
+          <div class="monster-name">${wpn.name}</div>
+          <div class="monster-meta">
+            <span style="color: #00f0ff;">🏷️ ${wpn.category || 'Armamento'}</span>
+            <span>📏 ${wpn.range || 'Medio'}</span>
+          </div>
+          <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 2px;">⚡ ${wpn.mechanics || wpn.description}</div>
+          <div class="monster-quote">${wpn.quote ? `"${wpn.quote}"` : ''}</div>
+        </div>
+        <div class="monster-actions" style="display: flex; flex-direction: column; gap: 4px;">
+          <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-cyan'}" onclick="selectWeapon('${wpn.id}')">
+            ${isSelected ? '✓ EN PANTALLA' : 'Proyectar'}
+          </button>
+          <button class="btn btn-sm btn-danger" onclick="fireWeapon('${wpn.id}')" title="Disparar sonido">
+            💥 Disparar
+          </button>
+          <button class="btn btn-sm" onclick="editWeapon('${wpn.id}')">✏️</button>
+        </div>
+      `;
+      weaponsContainer.appendChild(item);
+    });
+  }
+
+  window.selectWeapon = function(weaponId) {
+    vibrate(35);
+    const weapon = weaponsList.find(w => w.id === weaponId);
+    if (weapon) {
+      if (appState) appState.currentWeapon = weapon;
+      renderWeapons();
+      sendDisplay({ type: 'SELECT_WEAPON', weapon });
+    }
+  };
+
+  window.fireWeapon = function(weaponId) {
+    vibrate(50);
+    const weapon = weaponsList.find(w => w.id === weaponId);
+    if (weapon) {
+      log(`💥 Disparando arma: ${weapon.name}`);
+      sendDisplay({ type: 'FIRE_WEAPON', sound: weapon.sound });
+    }
+  };
+
+  window.editWeapon = function(weaponId) {
+    vibrate(20);
+    const weapon = weaponsList.find(w => w.id === weaponId);
+    if (!weapon) return;
+
+    document.getElementById('weaponFormId').value = weapon.id;
+    document.getElementById('weaponFormName').value = weapon.name || '';
+    document.getElementById('weaponFormIcon').value = weapon.icon || '🔫';
+    document.getElementById('weaponFormCategory').value = weapon.category || '';
+    document.getElementById('weaponFormRange').value = weapon.range || '';
+    document.getElementById('weaponFormSound').value = weapon.sound || 'xgun';
+    document.getElementById('weaponFormMechanics').value = weapon.mechanics || weapon.description || '';
+    document.getElementById('weaponFormQuote').value = weapon.quote || '';
+
+    weaponModalTitle.textContent = '🔫 EDITAR ARMA';
+    weaponModal.classList.add('active');
+  };
+
+  if (btnNewWeapon) {
+    btnNewWeapon.addEventListener('click', () => {
+      vibrate(20);
+      weaponForm.reset();
+      document.getElementById('weaponFormId').value = 'wpn-' + Date.now();
+      weaponModalTitle.textContent = '🔫 CREAR NUEVA ARMA';
+      weaponModal.classList.add('active');
+    });
+  }
+
+  window.closeWeaponModal = function() {
+    if (weaponModal) weaponModal.classList.remove('active');
+  };
+
+  if (weaponForm) {
+    weaponForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      vibrate(40);
+      const id = document.getElementById('weaponFormId').value;
+      const newWeapon = {
+        id,
+        name: document.getElementById('weaponFormName').value,
+        icon: document.getElementById('weaponFormIcon').value || '🔫',
+        category: document.getElementById('weaponFormCategory').value || 'Armamento',
+        range: document.getElementById('weaponFormRange').value || 'Medio',
+        sound: document.getElementById('weaponFormSound').value || 'xgun',
+        mechanics: document.getElementById('weaponFormMechanics').value || '',
+        quote: document.getElementById('weaponFormQuote').value || ''
+      };
+
+      const idx = weaponsList.findIndex(w => w.id === id);
+      if (idx >= 0) weaponsList[idx] = newWeapon;
+      else weaponsList.push(newWeapon);
+
+      if (appState && appState.currentWeapon && appState.currentWeapon.id === id) {
+        appState.currentWeapon = newWeapon;
+      }
+      renderWeapons();
+      sendDisplay({ type: 'SAVE_WEAPON', weapon: newWeapon });
+      closeWeaponModal();
+    });
+  }
+
+  // 4. HUNTERS
   function renderHunters() {
     huntersContainer.innerHTML = '';
     const hunters = appState?.hunters || [];

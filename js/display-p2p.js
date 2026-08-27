@@ -10,6 +10,7 @@
 
   // Local State
   let aliensList = window.GANTZ_DEFAULT_ALIENS || [];
+  let weaponsList = window.GANTZ_DEFAULT_WEAPONS || [];
   let appState = {
     mode: 'standby',
     timer: {
@@ -18,6 +19,7 @@
       isRunning: false
     },
     currentAlien: aliensList[0] || null,
+    currentWeapon: weaponsList[0] || null,
     broadcastMessage: 'LA HABÉIS PALMADO. AHORA VUESTRAS VIDAS ME PERTENECEN.',
     hunters: [
       { id: 1, name: 'Kei Kurono', nickname: 'Kurono-kun', points: 0, totalPoints: 10, status: 'alive' },
@@ -57,6 +59,14 @@
 
   const viewBroadcast = document.getElementById('viewBroadcast');
   const broadcastBody = document.getElementById('broadcastBody');
+
+  const viewWeapon = document.getElementById('viewWeapon');
+  const wpnDisplayIcon = document.getElementById('wpnDisplayIcon');
+  const wpnDisplayName = document.getElementById('wpnDisplayName');
+  const wpnDisplayCategory = document.getElementById('wpnDisplayCategory');
+  const wpnDisplayQuote = document.getElementById('wpnDisplayQuote');
+  const wpnDisplayMechanics = document.getElementById('wpnDisplayMechanics');
+  const wpnDisplayRange = document.getElementById('wpnDisplayRange');
 
   const qrModal = document.getElementById('qrModal');
   const qrPinDisplay = document.getElementById('qrPinDisplay');
@@ -219,6 +229,7 @@
     viewBriefing.style.display = 'none';
     viewScoring.style.display = 'none';
     viewBroadcast.style.display = 'none';
+    viewWeapon.style.display = 'none';
     
     sphereAssembly.classList.remove('is-open', 'active-mission');
     sphereDoors.style.display = 'none';
@@ -251,6 +262,27 @@
           if (briefingPoints) briefingPoints.textContent = `RECOMPENSA: ${alien.points || 0} PTO${alien.points === 1 ? '' : 'S'}`;
         }
         if (window.GantzAudio) window.GantzAudio.playSphereBoot();
+        break;
+
+      case 'weapon':
+        viewWeapon.style.display = 'flex';
+        if (appState.currentWeapon) {
+          const wpn = appState.currentWeapon;
+          wpnDisplayIcon.textContent = wpn.icon || '🔫';
+          wpnDisplayName.textContent = wpn.name.toUpperCase();
+          wpnDisplayCategory.textContent = wpn.category || 'ARMAMENTO';
+          wpnDisplayQuote.textContent = wpn.quote ? `"${wpn.quote}"` : '';
+          wpnDisplayMechanics.textContent = wpn.mechanics || wpn.description;
+          wpnDisplayRange.textContent = wpn.range || 'Medio';
+
+          if (window.GantzAudio) {
+            if (wpn.sound === 'xgun') window.GantzAudio.playXGun();
+            else if (wpn.sound === 'ygun') window.GantzAudio.playYGun();
+            else if (wpn.sound === 'suit') window.GantzAudio.playSuitSurge();
+            else if (wpn.sound === 'sword') window.GantzAudio.playSwordSlash();
+            else window.GantzAudio.playClick();
+          }
+        }
         break;
 
       case 'mission':
@@ -364,6 +396,7 @@
           type: 'SYNC_STATE',
           state: appState,
           aliens: aliensList,
+          weapons: weaponsList,
           roomId: roomId
         });
         break;
@@ -399,11 +432,34 @@
         setMode('briefing');
         break;
 
+      case 'SELECT_WEAPON':
+        appState.currentWeapon = msg.weapon;
+        saveState();
+        setMode('weapon');
+        break;
+
+      case 'FIRE_WEAPON':
+        if (window.GantzAudio) {
+          if (msg.sound === 'xgun') window.GantzAudio.playXGun();
+          else if (msg.sound === 'ygun') window.GantzAudio.playYGun();
+          else if (msg.sound === 'suit') window.GantzAudio.playSuitSurge();
+          else if (msg.sound === 'sword') window.GantzAudio.playSwordSlash();
+        }
+        break;
+
       case 'SAVE_ALIEN': {
         const idx = aliensList.findIndex(a => a.id === msg.alien.id);
         if (idx >= 0) aliensList[idx] = msg.alien;
         else aliensList.push(msg.alien);
         sendRemote({ type: 'ALIENS_LIST_UPDATED', aliens: aliensList });
+        break;
+      }
+
+      case 'SAVE_WEAPON': {
+        const idx = weaponsList.findIndex(w => w.id === msg.weapon.id);
+        if (idx >= 0) weaponsList[idx] = msg.weapon;
+        else weaponsList.push(msg.weapon);
+        sendRemote({ type: 'WEAPONS_LIST_UPDATED', weapons: weaponsList });
         break;
       }
 
@@ -427,6 +483,10 @@
           else if (msg.sound === 'boot') window.GantzAudio.playSphereBoot();
           else if (msg.sound === 'score') window.GantzAudio.playScoreJingle();
           else if (msg.sound === 'click') window.GantzAudio.playClick();
+          else if (msg.sound === 'xgun') window.GantzAudio.playXGun();
+          else if (msg.sound === 'ygun') window.GantzAudio.playYGun();
+          else if (msg.sound === 'suit') window.GantzAudio.playSuitSurge();
+          else if (msg.sound === 'sword') window.GantzAudio.playSwordSlash();
         }
         break;
     }
