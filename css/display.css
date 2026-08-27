@@ -1595,3 +1595,113 @@ body.cinema-mode .zen-exit-btn {
   0% { opacity: 0.7; filter: blur(2px); }
   100% { opacity: 1; filter: blur(0px); }
 }
+
+/* ==================== ULTRA-RESPONSIVE MEDIA QUERIES ==================== */
+@media (max-width: 1024px) {
+  .top-hud {
+    padding: 10px 16px;
+  }
+  .hud-left {
+    gap: 8px;
+  }
+  .gantz-logo {
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+  }
+  .hud-btn {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-hud {
+    padding: 8px 12px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .hud-left, .hud-right {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .room-pin-badge {
+    font-size: 0.72rem;
+    padding: 2px 6px;
+  }
+  .status-badge {
+    display: none;
+  }
+}
+
+/* Vertical / Portrait Screens (Tablets or Vertical TV) */
+@media (orientation: portrait) {
+  :root {
+    --sphere-size: min(92vw, 560px);
+  }
+  .manga-briefing-grid {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .manga-portrait-frame {
+    width: 130px;
+    height: 130px;
+    margin-top: 4px;
+  }
+  .manga-info-col {
+    gap: 4px;
+    font-size: 0.72rem;
+  }
+  .manga-field-title {
+    font-size: 0.68rem;
+  }
+  .manga-field-val {
+    font-size: 0.72rem;
+  }
+}
+
+/* Low-height screens (1366x768 or Windows Scaling 125%/150%) */
+@media (max-height: 720px) {
+  :root {
+    --sphere-size: min(78vh, 520px);
+  }
+  .top-hud {
+    padding: 6px 14px;
+  }
+  .manga-portrait-frame {
+    width: 140px;
+    height: 140px;
+  }
+  .digital-timer {
+    font-size: 3.8rem;
+  }
+  .manga-briefing-header {
+    font-size: 0.82rem;
+    margin-bottom: 4px;
+  }
+  .manga-info-col {
+    gap: 4px;
+  }
+  .manga-field-val {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-height: 600px) {
+  :root {
+    --sphere-size: min(76vh, 440px);
+  }
+  .top-hud {
+    padding: 4px 10px;
+  }
+  .digital-timer {
+    font-size: 3rem;
+  }
+  .manga-portrait-frame {
+    width: 110px;
+    height: 110px;
+  }
+  .manga-field-val {
+    font-size: 0.68rem;
+  }
+}
