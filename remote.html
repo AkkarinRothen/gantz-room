@@ -227,6 +227,8 @@
           <button class="btn" onclick="triggerSFX('click')">🔘 Clic Digital</button>
         </div>
       </div>
+    </div>
+
     <!-- ==================== TAB 6: WEAPONS & ARMORY ==================== -->
     <div class="tab-panel" id="tabWeapons">
       <div class="card">
@@ -378,7 +380,7 @@
 
   <!-- ==================== MODAL: WEAPON CREATOR / EDITOR ==================== -->
   <div class="modal-overlay" id="weaponModal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 480px; max-height: 90vh; overflow-y: auto;">
       <div class="card-header">
         <div class="card-title" id="weaponModalTitle">🔫 EDITAR ARMA</div>
         <button class="btn btn-sm btn-danger" onclick="closeWeaponModal()">✕</button>
@@ -392,19 +394,34 @@
           <input type="text" class="form-input" id="weaponFormName" required placeholder="Ej: Z-Gun (Cañón Gravitatorio)">
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Icono Emoji</label>
-          <input type="text" class="form-input" id="weaponFormIcon" value="🔫" maxlength="4">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 8px;">
+          <div class="form-group">
+            <label class="form-label">Icono Emoji</label>
+            <input type="text" class="form-input" id="weaponFormIcon" value="🔫" maxlength="4">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Categoría</label>
+            <input type="text" class="form-input" id="weaponFormCategory" placeholder="Ej: Armamento Pesado">
+          </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Categoría</label>
-          <input type="text" class="form-input" id="weaponFormCategory" placeholder="Ej: Arma Pesada de 100 Puntos">
+          <label class="form-label">Ruta de Imagen</label>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" class="form-input" id="weaponFormImage" placeholder="assets/webp/weapons/..." style="flex: 1;">
+            <button type="button" class="btn btn-cyan btn-sm" id="btnOpenWeaponGallery">🖼️ Galería</button>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Alcance / Rango</label>
-          <input type="text" class="form-input" id="weaponFormRange" placeholder="Ej: 50m">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="form-group">
+            <label class="form-label">Alcance / Rango</label>
+            <input type="text" class="form-input" id="weaponFormRange" placeholder="Ej: Medio (30m)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Daño / Efecto</label>
+            <input type="text" class="form-input" id="weaponFormDamage" placeholder="Ej: 2d10 Daño Interno">
+          </div>
         </div>
 
         <div class="form-group">
@@ -414,22 +431,23 @@
             <option value="ygun">Y-Gun (Anclajes + Teletransporte)</option>
             <option value="suit">G-Suit (Sobrecarga servo)</option>
             <option value="sword">Katana (Corte extensible)</option>
+            <option value="click">Click / Radar</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Mecánica / Reglas</label>
-          <textarea class="form-textarea" id="weaponFormMechanics" rows="2" placeholder="Reglas del arma..."></textarea>
+          <label class="form-label">Descripción Enigmática (Visible por defecto a Jugadores)</label>
+          <input type="text" class="form-input" id="weaponFormQuote" placeholder="Ej: Un cacharro negro con cuatro gatillos...">
         </div>
 
         <div class="form-group">
-          <label class="form-label">Cita / Frase</label>
-          <input type="text" class="form-input" id="weaponFormQuote" placeholder="Frase de Gantz...">
+          <label class="form-label">Mecánica / Reglas Secretas (Revelable por el Master)</label>
+          <textarea class="form-textarea" id="weaponFormMechanics" rows="3" placeholder="Instrucciones reales de funcionamiento y daño..."></textarea>
         </div>
 
         <div class="btn-grid-2" style="margin-top: 16px;">
           <button type="button" class="btn" onclick="closeWeaponModal()">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Guardar Arma</button>
+          <button type="submit" class="btn btn-primary">💾 Guardar Arma</button>
         </div>
       </form>
     </div>

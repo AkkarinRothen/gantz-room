@@ -722,13 +722,16 @@
         </div>
         <div class="monster-actions" style="display: flex; flex-direction: column; gap: 4px; min-width: 95px;">
           <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-cyan'}" onclick="selectWeapon('${wpn.id}')" style="font-size: 0.72rem; padding: 4px 6px;">
-            ${isSelected ? '✓ EN PANTALLA' : 'Proyectar'}
+            ${isSelected ? '✓ EN PANTALLA' : '📺 Proyectar'}
           </button>
           <button class="btn btn-sm ${isRevealed ? 'btn-danger' : 'btn-gold'}" onclick="toggleRevealWeapon('${wpn.id}')" style="font-size: 0.72rem; padding: 4px 6px;" title="${isRevealed ? 'Ocultar mecánicas a jugadores' : 'Revelar mecánicas en la Esfera'}">
             ${isRevealed ? '🔒 Ocultar' : '👁️ Revelar'}
           </button>
           <button class="btn btn-sm btn-danger" onclick="fireWeapon('${wpn.id}')" style="font-size: 0.72rem; padding: 4px 6px;" title="Disparar sonido">
             💥 Disparar
+          </button>
+          <button class="btn btn-sm" onclick="editWeapon('${wpn.id}')" style="font-size: 0.68rem; padding: 3px 6px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">
+            ✏️ Editar
           </button>
         </div>
       `;
@@ -754,6 +757,8 @@
       if (appState) appState.currentWeapon = weapon;
       renderWeapons();
       sendDisplay({ type: 'SELECT_WEAPON', weapon });
+      sendDisplay({ type: 'SET_MODE', mode: 'weapon' });
+      log(`📺 Proyectando arma en la Esfera: ${weapon.name}`);
     }
   };
 
@@ -762,7 +767,7 @@
     const weapon = weaponsList.find(w => w.id === weaponId);
     if (weapon) {
       log(`💥 Disparando arma: ${weapon.name}`);
-      sendDisplay({ type: 'FIRE_WEAPON', sound: weapon.sound });
+      sendDisplay({ type: 'TRIGGER_SOUND', sound: weapon.sound || 'xgun' });
     }
   };
 
@@ -775,9 +780,11 @@
     document.getElementById('weaponFormName').value = weapon.name || '';
     document.getElementById('weaponFormIcon').value = weapon.icon || '🔫';
     document.getElementById('weaponFormCategory').value = weapon.category || '';
+    document.getElementById('weaponFormImage').value = weapon.image || '';
     document.getElementById('weaponFormRange').value = weapon.range || '';
+    document.getElementById('weaponFormDamage').value = weapon.damageInfo || '';
     document.getElementById('weaponFormSound').value = weapon.sound || 'xgun';
-    document.getElementById('weaponFormMechanics').value = weapon.mechanics || weapon.description || '';
+    document.getElementById('weaponFormMechanics').value = weapon.secretMechanics || weapon.mechanics || weapon.description || '';
     document.getElementById('weaponFormQuote').value = weapon.quote || '';
 
     weaponModalTitle.textContent = '🔫 EDITAR ARMA';
@@ -791,6 +798,17 @@
       document.getElementById('weaponFormId').value = 'wpn-' + Date.now();
       weaponModalTitle.textContent = '🔫 CREAR NUEVA ARMA';
       weaponModal.classList.add('active');
+    });
+  }
+
+  const btnOpenWeaponGallery = document.getElementById('btnOpenWeaponGallery');
+  if (btnOpenWeaponGallery) {
+    btnOpenWeaponGallery.addEventListener('click', async () => {
+      vibrate(25);
+      await loadGalleryData();
+      currentGalleryFilter = 'weapons';
+      renderGalleryGrid();
+      if (galleryModal) galleryModal.classList.add('active');
     });
   }
 
@@ -808,15 +826,22 @@
         name: document.getElementById('weaponFormName').value,
         icon: document.getElementById('weaponFormIcon').value || '🔫',
         category: document.getElementById('weaponFormCategory').value || 'Armamento',
-        range: document.getElementById('weaponFormRange').value || 'Medio',
+        image: document.getElementById('weaponFormImage').value || 'assets/webp/weapons/civil_y_pistola_alienigena_en_retroceso.webp',
+        range: document.getElementById('weaponFormRange').value || 'Medio (30m)',
+        damageInfo: document.getElementById('weaponFormDamage').value || '2d10 Daño',
         sound: document.getElementById('weaponFormSound').value || 'xgun',
-        mechanics: document.getElementById('weaponFormMechanics').value || '',
-        quote: document.getElementById('weaponFormQuote').value || ''
+        secretMechanics: document.getElementById('weaponFormMechanics').value || '',
+        quote: document.getElementById('weaponFormQuote').value || '',
+        isRevealed: false
       };
 
       const idx = weaponsList.findIndex(w => w.id === id);
-      if (idx >= 0) weaponsList[idx] = newWeapon;
-      else weaponsList.push(newWeapon);
+      if (idx >= 0) {
+        newWeapon.isRevealed = weaponsList[idx].isRevealed || false;
+        weaponsList[idx] = newWeapon;
+      } else {
+        weaponsList.push(newWeapon);
+      }
 
       if (appState && appState.currentWeapon && appState.currentWeapon.id === id) {
         appState.currentWeapon = newWeapon;
@@ -1342,12 +1367,17 @@
       `;
       card.addEventListener('click', () => {
         vibrate(30);
-        if (alienPreviewImg) alienPreviewImg.src = item.path;
-        if (alienFormImage) alienFormImage.value = item.path;
-        if (alienFramePosY) alienFramePosY.value = 0;
-        if (alienFramePosX) alienFramePosX.value = 50;
-        if (alienFrameScale) alienFrameScale.value = 105;
-        updatePreviewFraming();
+        const weaponFormImage = document.getElementById('weaponFormImage');
+        if (currentGalleryFilter === 'weapons' || (weaponModal && weaponModal.classList.contains('active'))) {
+          if (weaponFormImage) weaponFormImage.value = item.path;
+        } else {
+          if (alienPreviewImg) alienPreviewImg.src = item.path;
+          if (alienFormImage) alienFormImage.value = item.path;
+          if (alienFramePosY) alienFramePosY.value = 0;
+          if (alienFramePosX) alienFramePosX.value = 50;
+          if (alienFrameScale) alienFrameScale.value = 105;
+          updatePreviewFraming();
+        }
         closeGalleryModal();
       });
       galleryGrid.appendChild(card);
