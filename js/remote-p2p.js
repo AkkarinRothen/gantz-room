@@ -3,8 +3,21 @@
   let peer = null;
   let conn = null;
   let roomId = null;
-  let appState = null;
   let aliensList = window.GANTZ_DEFAULT_ALIENS || [];
+  
+  let defaultState = {
+    mode: 'standby',
+    timer: { totalSeconds: 3600, remainingSeconds: 3600, isRunning: false },
+    currentAlien: aliensList[0] || null,
+    broadcastMessage: 'LA HABÉIS PALMADO. AHORA VUESTRAS VIDAS ME PERTENECEN.',
+    hunters: [
+      { id: 1, name: 'Kei Kurono', nickname: 'Kurono-kun', points: 0, totalPoints: 10, status: 'alive' },
+      { id: 2, name: 'Masaru Kato', nickname: 'Gafas Justiciero', points: 0, totalPoints: 0, status: 'alive' },
+      { id: 3, name: 'Kei Kishimoto', nickname: 'Chica del Baño', points: 0, totalPoints: 0, status: 'alive' },
+      { id: 4, name: 'Yoshikazu Suzuki', nickname: 'Abuelo Solidario', points: 0, totalPoints: 0, status: 'alive' }
+    ]
+  };
+  let appState = { ...defaultState };
 
   // DOM Elements
   const roomConnectOverlay = document.getElementById('roomConnectOverlay');
@@ -14,6 +27,16 @@
   const connectFeedback = document.getElementById('connectFeedback');
 
   let broadcastChan = null;
+
+  // Setup BroadcastChannel immediately
+  try {
+    if (typeof BroadcastChannel !== 'undefined') {
+      broadcastChan = new BroadcastChannel('gantz_sync_channel');
+      broadcastChan.onmessage = (event) => {
+        if (event.data) handleServerMessage(event.data);
+      };
+    }
+  } catch (e) {}
 
   function showFeedback(msg, color = '#ffd700') {
     if (connectFeedback) {
@@ -410,6 +433,9 @@
     vibrate(35);
     sendDisplay({ type: 'TRIGGER_SOUND', sound });
   };
+
+  // Initial Render
+  renderAll();
 
   // Auto-connect check from URL query parameter ?room=...
   const urlParams = new URLSearchParams(window.location.search);

@@ -435,12 +435,9 @@
         broadcastChan = new BroadcastChannel('gantz_sync_channel');
         broadcastChan.onmessage = (event) => {
           const msg = event.data;
-          if (msg && msg.targetRoom) {
-            const target = msg.targetRoom.toUpperCase().trim();
-            const cleanTarget = target.startsWith('GANTZ-') ? target : `GANTZ-${target}`;
-            if (cleanTarget !== roomId) return;
+          if (msg) {
+            handleRemoteMessage(msg);
           }
-          handleRemoteMessage(msg);
         };
       }
     } catch (e) {}
