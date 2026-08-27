@@ -179,21 +179,34 @@ server.on('upgrade', (req, socket) => {
   handleWSHandshake(req, socket);
 });
 
-server.listen(PORT, () => {
-  console.log('\n======================================================');
-  console.log('   ⚫ GANTZ WEB // SERVIDOR DE PREVISUALIZACIÓN ⚫');
-  console.log('======================================================');
-  console.log(`🖥️  PANTALLA ESFERA:    http://localhost:${PORT}/index.html`);
-  console.log(`📱 CONTROL REMOTO:     http://localhost:${PORT}/remote.html`);
-  console.log('⚡ CANAL WEBSOCKET:    Habilitado en puerto ' + PORT);
-  console.log('------------------------------------------------------');
-  console.log(' Abriendo pestañas en tu navegador predeterminado...');
-  console.log(' Presiona CTRL+C para detener el servidor.');
-  console.log('======================================================\n');
+function startServer(port) {
+  server.once('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`⚠️  Puerto ${port} en uso, probando automáticamente en ${port + 1}...`);
+      startServer(port + 1);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
 
-  const startCmd = process.platform === 'win32' ? 'start' : process.platform === 'darwin' ? 'open' : 'xdg-open';
-  exec(`${startCmd} http://localhost:${PORT}/index.html`);
-  setTimeout(() => {
-    exec(`${startCmd} http://localhost:${PORT}/remote.html`);
-  }, 1000);
-});
+  server.listen(port, () => {
+    console.log('\n======================================================');
+    console.log('   ⚫ GANTZ WEB // SERVIDOR DE PREVISUALIZACIÓN ⚫');
+    console.log('======================================================');
+    console.log(`🖥️  PANTALLA ESFERA:    http://localhost:${port}/index.html`);
+    console.log(`📱 CONTROL REMOTO:     http://localhost:${port}/remote.html`);
+    console.log('⚡ CANAL WEBSOCKET:    Habilitado en puerto ' + port);
+    console.log('------------------------------------------------------');
+    console.log(' Abriendo pestañas en tu navegador predeterminado...');
+    console.log(' Presiona CTRL+C para detener el servidor.');
+    console.log('======================================================\n');
+
+    const startCmd = process.platform === 'win32' ? 'start' : process.platform === 'darwin' ? 'open' : 'xdg-open';
+    exec(`${startCmd} http://localhost:${port}/index.html`);
+    setTimeout(() => {
+      exec(`${startCmd} http://localhost:${port}/remote.html`);
+    }, 1000);
+  });
+}
+
+startServer(PORT);
