@@ -91,6 +91,7 @@
       </div>
     </div>
     <div style="display: flex; gap: 8px; align-items: center;">
+      <button class="btn btn-sm btn-gold" id="updateAvailableBadge" style="display: none; font-size: 0.72rem; padding: 4px 8px; animation: pulse 1.5s infinite;" title="Nueva versión disponible">⚡ V1.1 DISPONIBLE</button>
       <button class="btn btn-sm btn-cyan" id="btnInstallPwa" style="display: none; font-size: 0.72rem; padding: 4px 8px;" title="Instalar App en tu pantalla de inicio">📲 INSTALAR</button>
       <div class="header-timer-pill" id="headerTimer">60:00</div>
     </div>
@@ -519,6 +520,61 @@
         <button type="button" class="btn btn-gold" onclick="confirm100PtsReward()">
           ⚡ CONFIRMAR Y OTORGAR ELECCIÓN (-100 PTS)
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update Notification Modal -->
+  <div class="modal-overlay" id="updateModal">
+    <div class="modal-content" style="max-width: 440px; border-color: var(--gantz-gold); box-shadow: 0 0 30px rgba(255, 215, 0, 0.25);">
+      <div class="modal-header" style="border-bottom-color: rgba(255, 215, 0, 0.3);">
+        <h3 class="modal-title" style="color: var(--gantz-gold); display: flex; align-items: center; gap: 8px;">
+          <span>⚡</span> ACTUALIZACIÓN DISPONIBLE
+        </h3>
+        <button class="modal-close" id="btnCloseUpdateModal">&times;</button>
+      </div>
+      <div style="padding: 14px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.2); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px;">
+          <div>
+            <div style="font-size: 0.7rem; color: #94a3b8;">VERSIÓN INSTALADA:</div>
+            <strong id="updateInstalledVersionText" style="color: #fff; font-size: 0.85rem;">v1.0.0</strong>
+          </div>
+          <div style="font-size: 1.2rem; color: var(--gantz-gold);">➔</div>
+          <div>
+            <div style="font-size: 0.7rem; color: #94a3b8;">NUEVA VERSIÓN:</div>
+            <strong id="updateNewVersionText" style="color: var(--gantz-gold); font-size: 0.85rem;">v1.1.0</strong>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 0.75rem; color: var(--gantz-cyan); font-weight: bold; margin-bottom: 6px;">NOVEDADES DEL SISTEMA:</div>
+          <ul id="updateChangelogList" style="margin: 0; padding-left: 18px; font-size: 0.75rem; color: #cbd5e1; line-height: 1.5;">
+            <li>Sistema canónico de recompensas de 100 Puntos</li>
+            <li>Sincronización P2P y auto-reconexión mejorada</li>
+          </ul>
+        </div>
+
+        <div id="updateDownloadProgressWrap" style="display: none; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--gantz-cyan); margin-bottom: 4px;">
+            <span id="updateProgressStatusText">DESCARGANDO ACTUALIZACIÓN...</span>
+            <span id="updateProgressPercent">0%</span>
+          </div>
+          <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+            <div id="updateProgressBar" style="width: 0%; height: 100%; background: var(--gantz-gold); transition: width 0.3s;"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button type="button" class="btn btn-gold" id="btnInstallApkDirect" style="padding: 10px; font-weight: bold;">
+            ⚡ ACTUALIZAR E INSTALAR AHORA (1-CLIC)
+          </button>
+          <button type="button" class="btn btn-cyan" id="btnDownloadApkBrowser" style="padding: 8px; font-size: 0.78rem;">
+            🌐 DESCARGAR VÍA NAVEGADOR
+          </button>
+          <button type="button" class="btn" id="btnPostponeUpdate" style="padding: 6px; font-size: 0.72rem; color: #94a3b8; background: transparent; border: 1px solid rgba(255,255,255,0.15);">
+            ⏳ MÁS TARDE (CONTINUAR SESIÓN)
+          </button>
+        </div>
       </div>
     </div>
   </div>

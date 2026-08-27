@@ -1,0 +1,14 @@
+{
+  "versionCode": 2,
+  "versionName": "1.1.0",
+  "minSupportedVersion": 1,
+  "apkUrl": "https://akkarinrothen.github.io/gantz-room/assets/apk/gantz-remote.apk",
+  "apkRelativePath": "assets/apk/gantz-remote.apk",
+  "releaseDate": "2026-08-27",
+  "changelog": [
+    "Sistema canónico de recompensas de 100 Puntos (3 opciones completas)",
+    "Detección inteligente de salas y auto-reconexión P2P WebRTC",
+    "Soporte offline nativo sin dependencias de CDNs externos",
+    "Sistema de actualización OTA directa desde la Esfera"
+  ]
+}

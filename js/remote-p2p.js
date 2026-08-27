@@ -182,6 +182,9 @@
         aliensList = msg.aliens || aliensList;
         weaponsList = msg.weapons || weaponsList;
         renderAll();
+        if (msg.appVersion) {
+          checkAppVersion(msg.appVersion);
+        }
         break;
 
       case 'TIMER_UPDATED':
@@ -1373,9 +1376,148 @@
     if (galleryModal) galleryModal.classList.remove('active');
   };
 
+  // ==================== VERSION CHECK & OTA UPDATER ====================
+  let latestAvailableVersion = null;
+  let updateModalDismissed = false;
+
+  function getInstalledVersionInfo() {
+    let code = 1;
+    let name = "1.0.0";
+    if (window.AndroidBridge && typeof window.AndroidBridge.getAppVersionCode === 'function') {
+      try {
+        code = window.AndroidBridge.getAppVersionCode();
+        name = window.AndroidBridge.getAppVersionName() || ("1." + code + ".0");
+      } catch (e) {}
+    }
+    return { code, name };
+  }
+
+  function checkAppVersion(remoteVer) {
+    if (!remoteVer || !remoteVer.versionCode) return;
+    const installed = getInstalledVersionInfo();
+    
+    log(`Verificación de Versión: Instalada v${installed.name} (código ${installed.code}) | Remota v${remoteVer.versionName} (código ${remoteVer.versionCode})`);
+
+    if (remoteVer.versionCode > installed.code) {
+      latestAvailableVersion = remoteVer;
+      
+      const badge = document.getElementById('updateAvailableBadge');
+      if (badge) {
+        badge.style.display = 'block';
+        badge.textContent = `⚡ V${remoteVer.versionName || remoteVer.versionCode} DISPONIBLE`;
+      }
+
+      if (!updateModalDismissed) {
+        showUpdateModal(remoteVer, installed);
+      }
+    }
+  }
+
+  function showUpdateModal(remoteVer, installed) {
+    const modal = document.getElementById('updateModal');
+    const installedText = document.getElementById('updateInstalledVersionText');
+    const newText = document.getElementById('updateNewVersionText');
+    const changelogList = document.getElementById('updateChangelogList');
+
+    if (installedText) installedText.textContent = `v${installed.name}`;
+    if (newText) newText.textContent = `v${remoteVer.versionName || remoteVer.versionCode}`;
+
+    if (changelogList && Array.isArray(remoteVer.changelog)) {
+      changelogList.innerHTML = remoteVer.changelog.map(item => `<li>${escapeHtml(item)}</li>`).join('');
+    }
+
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeUpdateModal() {
+    vibrate(20);
+    updateModalDismissed = true;
+    const modal = document.getElementById('updateModal');
+    if (modal) modal.classList.remove('active');
+  }
+
+  const btnInstallApkDirect = document.getElementById('btnInstallApkDirect');
+  if (btnInstallApkDirect) {
+    btnInstallApkDirect.addEventListener('click', () => {
+      vibrate(40);
+      const apkUrl = (latestAvailableVersion && latestAvailableVersion.apkUrl)
+        ? latestAvailableVersion.apkUrl
+        : 'https://akkarinrothen.github.io/gantz-room/assets/apk/gantz-remote.apk';
+
+      const progressWrap = document.getElementById('updateDownloadProgressWrap');
+      const statusText = document.getElementById('updateProgressStatusText');
+      const pBar = document.getElementById('updateProgressBar');
+      const pPercent = document.getElementById('updateProgressPercent');
+
+      if (progressWrap) progressWrap.style.display = 'block';
+      if (statusText) statusText.textContent = 'INICIANDO DESCARGA NATIVA...';
+      if (pBar) pBar.style.width = '35%';
+      if (pPercent) pPercent.textContent = '35%';
+
+      if (window.AndroidBridge && typeof window.AndroidBridge.downloadAndInstallApk === 'function') {
+        try {
+          window.AndroidBridge.downloadAndInstallApk(apkUrl);
+          setTimeout(() => {
+            if (pBar) pBar.style.width = '85%';
+            if (pPercent) pPercent.textContent = '85%';
+            if (statusText) statusText.textContent = 'ABRIENDO INSTALADOR DE ANDROID...';
+          }, 1200);
+        } catch (e) {
+          logError('Fallo al invocar instalador nativo:', e);
+          window.open(apkUrl, '_blank');
+        }
+      } else {
+        window.open(apkUrl, '_blank');
+      }
+    });
+  }
+
+  const btnDownloadApkBrowser = document.getElementById('btnDownloadApkBrowser');
+  if (btnDownloadApkBrowser) {
+    btnDownloadApkBrowser.addEventListener('click', () => {
+      vibrate(25);
+      const apkUrl = (latestAvailableVersion && latestAvailableVersion.apkUrl)
+        ? latestAvailableVersion.apkUrl
+        : 'https://akkarinrothen.github.io/gantz-room/assets/apk/gantz-remote.apk';
+
+      if (window.AndroidBridge && typeof window.AndroidBridge.openInBrowser === 'function') {
+        window.AndroidBridge.openInBrowser(apkUrl);
+      } else {
+        window.open(apkUrl, '_blank');
+      }
+    });
+  }
+
+  const btnPostponeUpdate = document.getElementById('btnPostponeUpdate');
+  if (btnPostponeUpdate) btnPostponeUpdate.addEventListener('click', closeUpdateModal);
+
+  const btnCloseUpdateModal = document.getElementById('btnCloseUpdateModal');
+  if (btnCloseUpdateModal) btnCloseUpdateModal.addEventListener('click', closeUpdateModal);
+
+  const updateAvailableBadge = document.getElementById('updateAvailableBadge');
+  if (updateAvailableBadge) {
+    updateAvailableBadge.addEventListener('click', () => {
+      vibrate(25);
+      if (latestAvailableVersion) {
+        showUpdateModal(latestAvailableVersion, getInstalledVersionInfo());
+      }
+    });
+  }
+
+  async function fetchOnlineVersionCheck() {
+    try {
+      const res = await fetch('version.json?t=' + Date.now());
+      if (res.ok) {
+        const verData = await res.json();
+        checkAppVersion(verData);
+      }
+    } catch (e) {}
+  }
+
   // Initial Render
   renderAll();
   renderSavedRooms();
+  fetchOnlineVersionCheck();
 
   // Auto-connect check from URL query parameter ?room=...
   const urlParams = new URLSearchParams(window.location.search);

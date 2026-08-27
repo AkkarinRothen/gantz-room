@@ -29,6 +29,17 @@
     ]
   };
 
+  const appVersion = {
+    versionCode: 2,
+    versionName: "1.1.0",
+    apkUrl: "https://akkarinrothen.github.io/gantz-room/assets/apk/gantz-remote.apk",
+    changelog: [
+      "Sistema canónico de recompensas de 100 Puntos",
+      "Detección inteligente de salas y auto-reconexión WebRTC P2P",
+      "Soporte offline nativo sin dependencias de CDNs externos"
+    ]
+  };
+
   // DOM Elements
   const sphereAssembly = document.getElementById('sphereAssembly');
   const sphereDoors = document.getElementById('sphereDoors');
@@ -453,7 +464,8 @@
           state: appState,
           aliens: aliensList,
           weapons: weaponsList,
-          roomId: roomId
+          roomId: roomId,
+          appVersion: appVersion
         });
         break;
 
@@ -691,7 +703,8 @@
             state: appState,
             aliens: aliensList,
             weapons: weaponsList,
-            roomId: roomId
+            roomId: roomId,
+            appVersion: appVersion
           });
           if (window.GantzAudio) window.GantzAudio.playClick();
         });
