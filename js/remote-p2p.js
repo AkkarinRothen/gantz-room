@@ -212,6 +212,35 @@
         if (appState) appState.hunters = msg.hunters;
         renderHunters();
         break;
+
+      case 'PONG':
+        missedPongs = 0;
+        const rtt = Date.now() - msg.timestamp;
+        if (latencyBadge) {
+          latencyBadge.textContent = `${rtt} ms`;
+          if (rtt < 80) {
+            latencyBadge.style.color = '#00ff66';
+            latencyBadge.style.borderColor = '#00ff66';
+            latencyBadge.style.background = 'rgba(0,255,102,0.15)';
+          } else if (rtt < 200) {
+            latencyBadge.style.color = '#00f0ff';
+            latencyBadge.style.borderColor = '#00f0ff';
+            latencyBadge.style.background = 'rgba(0,240,255,0.15)';
+          } else {
+            latencyBadge.style.color = '#ff003c';
+            latencyBadge.style.borderColor = '#ff003c';
+            latencyBadge.style.background = 'rgba(255,0,60,0.15)';
+          }
+        }
+        break;
+
+      case 'HAPTIC_PULSE':
+        if (msg.pattern === 'fatal') {
+          vibrate([150, 50, 150, 50, 300]);
+        } else {
+          vibrate(50);
+        }
+        break;
     }
   }
 
@@ -382,6 +411,31 @@
     } catch (e) {}
   }
 
+  let heartbeatTimer = null;
+  let lastPingSent = 0;
+  let missedPongs = 0;
+  const latencyBadge = document.getElementById('latencyBadge');
+
+  function startHeartbeat() {
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    heartbeatTimer = setInterval(() => {
+      if (activeConnection && activeConnection.open) {
+        lastPingSent = Date.now();
+        sendDisplay({ type: 'PING', timestamp: lastPingSent });
+        missedPongs++;
+        if (missedPongs >= 3) {
+          logWarn('Sin respuesta de la Esfera. Intentando reconexión silenciosa...');
+          if (latencyBadge) {
+            latencyBadge.textContent = 'RECON...';
+            latencyBadge.style.color = '#eab308';
+            latencyBadge.style.borderColor = '#eab308';
+          }
+          if (roomId) connectToRoom(roomId);
+        }
+      }
+    }, 2500);
+  }
+
   function setConnectedUI(cleanName) {
     if (window.GantzLogger) {
       window.GantzLogger.updateState('webrtcStatus', 'Conectado');
@@ -392,6 +446,7 @@
     syncText.textContent = cleanName;
     syncText.style.color = '#00ff66';
     if (roomConnectOverlay) roomConnectOverlay.style.display = 'none';
+    startHeartbeat();
   }
 
   // 1. TIMER
@@ -1677,14 +1732,67 @@
     });
   }
 
-  const syncStatusEl = document.querySelector('.sync-status');
-  if (syncStatusEl) {
-    syncStatusEl.style.cursor = 'pointer';
-    syncStatusEl.title = 'Clic para cambiar sala';
-    syncStatusEl.addEventListener('click', () => {
-      roomConnectOverlay.style.display = 'flex';
-      renderSavedRooms();
-      roomPinInput.focus();
+  // ==================== LASER POINTER TOUCHPAD CONTROLLER ====================
+  const laserTouchpadModal = document.getElementById('laserTouchpadModal');
+  const laserTouchpadArea = document.getElementById('laserTouchpadArea');
+  const touchpadReticle = document.getElementById('touchpadReticle');
+  const laserCoordinatesText = document.getElementById('laserCoordinatesText');
+
+  window.openLaserTouchpad = function() {
+    vibrate(25);
+    if (laserTouchpadModal) laserTouchpadModal.style.display = 'flex';
+  };
+
+  window.closeLaserTouchpad = function() {
+    vibrate(20);
+    if (laserTouchpadModal) laserTouchpadModal.style.display = 'none';
+    sendDisplay({ type: 'LASER_POINTER', active: false });
+  };
+
+  function handleTouchpadMove(e) {
+    if (!laserTouchpadArea) return;
+    const rect = laserTouchpadArea.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    let normX = (clientX - rect.left) / rect.width;
+    let normY = (clientY - rect.top) / rect.height;
+
+    normX = Math.max(0, Math.min(1, normX));
+    normY = Math.max(0, Math.min(1, normY));
+
+    if (touchpadReticle) {
+      touchpadReticle.style.display = 'block';
+      touchpadReticle.style.left = (normX * 100) + '%';
+      touchpadReticle.style.top = (normY * 100) + '%';
+    }
+
+    if (laserCoordinatesText) {
+      laserCoordinatesText.textContent = `POSICIÓN: ${Math.round(normX * 100)}% , ${Math.round(normY * 100)}%`;
+    }
+
+    sendDisplay({ type: 'LASER_POINTER', x: normX, y: normY, active: true });
+  }
+
+  if (laserTouchpadArea) {
+    laserTouchpadArea.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      handleTouchpadMove(e);
+    });
+
+    laserTouchpadArea.addEventListener('pointermove', (e) => {
+      if (e.buttons > 0 || e.pointerType === 'touch') {
+        e.preventDefault();
+        handleTouchpadMove(e);
+      }
+    });
+
+    laserTouchpadArea.addEventListener('pointerup', () => {
+      sendDisplay({ type: 'LASER_POINTER', active: false });
+    });
+
+    laserTouchpadArea.addEventListener('pointerleave', () => {
+      sendDisplay({ type: 'LASER_POINTER', active: false });
     });
   }
 })();

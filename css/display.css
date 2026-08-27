@@ -1445,3 +1445,63 @@ body.cinema-mode .zen-exit-btn {
   font-family: var(--font-display);
   margin-top: 4px;
 }
+
+/* ==================== HOLOGRAPHIC LASER POINTER ==================== */
+.laser-pointer-target {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 99999;
+  display: none;
+  transition: transform 0.04s ease-out;
+}
+
+.laser-pointer-target.active {
+  display: block;
+}
+
+.laser-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  background: #ff003c;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 16px #ff003c, 0 0 32px #ff003c, 0 0 8px #fff;
+  animation: laserPulseAnim 0.8s infinite alternate;
+}
+
+.laser-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  height: 36px;
+  border: 1.5px dashed #00f0ff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: radarSweepAnim 4s linear infinite;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+.laser-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(to right, transparent 48%, rgba(255, 0, 60, 0.6) 50%, transparent 52%),
+              linear-gradient(to bottom, transparent 48%, rgba(255, 0, 60, 0.6) 50%, transparent 52%);
+}
+
+@keyframes laserPulseAnim {
+  0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.25); opacity: 1; }
+}

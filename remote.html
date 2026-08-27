@@ -90,7 +90,8 @@
         <span id="syncText">SINCRONIZADO</span>
       </div>
     </div>
-    <div style="display: flex; gap: 8px; align-items: center;">
+    <div style="display: flex; gap: 6px; align-items: center;">
+      <div class="header-timer-pill" id="latencyBadge" style="background: rgba(0,255,102,0.15); border-color: #00ff66; color: #00ff66; font-size: 0.72rem; min-width: 48px; text-align: center;" title="Latencia WebRTC RTT">-- ms</div>
       <button class="btn btn-sm btn-gold" id="updateAvailableBadge" style="display: none; font-size: 0.72rem; padding: 4px 8px; animation: pulse 1.5s infinite;" title="Nueva versión disponible">⚡ V1.1 DISPONIBLE</button>
       <button class="btn btn-sm btn-cyan" id="btnInstallPwa" style="display: none; font-size: 0.72rem; padding: 4px 8px;" title="Instalar App en tu pantalla de inicio">📲 INSTALAR</button>
       <div class="header-timer-pill" id="headerTimer">60:00</div>
@@ -641,6 +642,33 @@
             ⏳ MÁS TARDE (CONTINUAR SESIÓN)
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Laser Pointer Button -->
+  <button id="btnFloatingLaser" class="floating-laser-btn" onclick="openLaserTouchpad()" title="Abrir Puntero Láser Holográfico">
+    <span>🎯</span> LÁSER
+  </button>
+
+  <!-- ==================== MODAL: HOLOGRAPHIC LASER TOUCHPAD ==================== -->
+  <div class="modal-overlay" id="laserTouchpadModal" style="display: none; z-index: 10008;">
+    <div class="modal-content" style="max-width: 450px; text-align: center;">
+      <div class="card-header">
+        <div class="card-title">🎯 PUNTERO LÁSER HOLOGRÁFICO</div>
+        <button class="btn btn-sm btn-danger" onclick="closeLaserTouchpad()">✕ CERRAR</button>
+      </div>
+      <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px;">
+        Desliza el dedo por el touchpad para apuntar la retícula láser en la pantalla grande:
+      </div>
+      <div id="laserTouchpadArea" class="laser-touchpad-area">
+        <div class="touchpad-grid"></div>
+        <div class="touchpad-reticle" id="touchpadReticle"></div>
+        <div class="touchpad-hint">ARRASTRA AQUÍ PARA APUNTAR</div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+        <span style="font-size: 0.72rem; color: var(--gantz-cyan);" id="laserCoordinatesText">POSICIÓN: -- , --</span>
+        <button class="btn btn-sm btn-primary" onclick="triggerSFX('click')">🔘 Clic Láser</button>
       </div>
     </div>
   </div>

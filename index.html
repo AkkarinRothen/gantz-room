@@ -28,6 +28,7 @@
         <span id="hudStatusText">STANDBY</span>
       </div>
       <div class="room-pin-badge" id="hudRoomPin" title="Clic para ver o copiar PIN">SALA: GENERANDO...</div>
+      <div class="room-pin-badge" id="hudConnectedDevices" style="border-color: rgba(0,255,102,0.3); color: #00ff66; font-size: 0.72rem;">📱 0 CONTROLES</div>
     </div>
     <div class="hud-right">
       <button class="hud-btn" id="btnZenToggle" title="Modo Cine / Ocultar HUD">🖥️ CINE</button>
@@ -307,6 +308,13 @@
   <!-- Audio unlock banner -->
   <div id="audioUnlockOverlay" style="position: fixed; bottom: 16px; right: 16px; background: rgba(0,0,0,0.85); border: 1px solid #00ff66; padding: 10px 18px; border-radius: 6px; z-index: 1001; font-size: 0.85rem; color: #00ff66; cursor: pointer; display: flex; align-items: center; gap: 8px;">
     <span>🎵 Haz clic aquí para habilitar los efectos de sonido de Gantz</span>
+  </div>
+
+  <!-- Holographic Laser Pointer Target -->
+  <div id="hologramLaserPointer" class="laser-pointer-target">
+    <div class="laser-dot"></div>
+    <div class="laser-ring"></div>
+    <div class="laser-crosshair"></div>
   </div>
 
   <!-- Libraries -->

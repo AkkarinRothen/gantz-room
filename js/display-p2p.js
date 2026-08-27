@@ -609,6 +609,22 @@
         }
         break;
 
+      case 'PING':
+        sendRemote({ type: 'PONG', timestamp: msg.timestamp, serverTime: Date.now() });
+        break;
+
+      case 'LASER_POINTER':
+        if (hologramLaserPointer) {
+          if (msg.active) {
+            hologramLaserPointer.classList.add('active');
+            hologramLaserPointer.style.left = (msg.x * 100) + 'vw';
+            hologramLaserPointer.style.top = (msg.y * 100) + 'vh';
+          } else {
+            hologramLaserPointer.classList.remove('active');
+          }
+        }
+        break;
+
       case 'SET_VOLUME':
         if (window.GantzAudio && typeof window.GantzAudio.setMasterVolume === 'function') {
           window.GantzAudio.setMasterVolume(msg.volume);
@@ -832,6 +848,7 @@
           hudStatusBadge.style.borderColor = '#00f0ff';
           hudStatusBadge.style.color = '#00f0ff';
           hudStatusText.textContent = 'TABLET CONECTADA';
+          updateConnectedDevicesBadge();
           
           sendRemote({
             type: 'SYNC_STATE',
@@ -851,6 +868,7 @@
         conn.on('close', () => {
           logWarn('Canal WebRTC cerrado por la tablet');
           activeConnections = activeConnections.filter(c => c.peer !== conn.peer);
+          updateConnectedDevicesBadge();
           if (activeConnections.length === 0) {
             if (window.GantzLogger) window.GantzLogger.updateState('webrtcStatus', 'Cerrado');
             hudStatusBadge.style.borderColor = '#ff003c';
@@ -890,6 +908,25 @@
       });
     } catch (e) {}
   }
+
+  // Keyboard shortcuts on PC
+  window.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      appState.timer.isRunning = !appState.timer.isRunning;
+      updateTimerDisplay();
+      sendRemote({ type: 'SYNC_STATE', state: appState, aliens: aliensList, weapons: weaponsList, roomId: roomId, appVersion: appVersion });
+    }
+    if (e.key >= '1' && e.key <= '7') {
+      const modes = ['standby', 'open', 'briefing', 'mission', 'radar', 'scoring', 'broadcast'];
+      const m = modes[parseInt(e.key) - 1];
+      if (m) {
+        setMode(m);
+        sendRemote({ type: 'SYNC_STATE', state: appState, aliens: aliensList, weapons: weaponsList, roomId: roomId, appVersion: appVersion });
+      }
+    }
+  });
 
   // Room Management UI Listeners in QR Modal
   const btnGenerateNewRoom = document.getElementById('btnGenerateNewRoom');

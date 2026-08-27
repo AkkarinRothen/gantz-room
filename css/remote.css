@@ -708,3 +708,95 @@ body {
   text-overflow: ellipsis;
   max-width: 100%;
 }
+
+/* ==================== FLOATING LASER BUTTON & TOUCHPAD ==================== */
+.floating-laser-btn {
+  position: fixed;
+  bottom: 72px;
+  right: 16px;
+  background: linear-gradient(135deg, rgba(255, 0, 60, 0.9) 0%, rgba(200, 0, 40, 0.9) 100%);
+  border: 1.5px solid #ff003c;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 8px 14px;
+  border-radius: 20px;
+  box-shadow: 0 4px 15px rgba(255, 0, 60, 0.4);
+  cursor: pointer;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.floating-laser-btn:hover, .floating-laser-btn:active {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 0, 60, 0.7);
+}
+
+.laser-touchpad-area {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  background: radial-gradient(circle, rgba(0, 20, 30, 0.95) 0%, rgba(0, 5, 12, 0.98) 100%);
+  border: 2px solid var(--gantz-cyan);
+  border-radius: 8px;
+  box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.2);
+  overflow: hidden;
+  touch-action: none;
+  cursor: crosshair;
+  margin: 10px 0;
+}
+
+.touchpad-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: 20px 20px;
+  background-image: linear-gradient(to right, rgba(0, 240, 255, 0.08) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+}
+
+.touchpad-reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  border: 1.5px dashed #ff003c;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(255, 0, 60, 0.6);
+  display: none;
+}
+
+.touchpad-reticle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: #ff003c;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px #ff003c;
+}
+
+.touchpad-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  color: rgba(0, 240, 255, 0.4);
+  letter-spacing: 2px;
+  pointer-events: none;
+  text-align: center;
+}
