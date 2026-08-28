@@ -521,6 +521,47 @@ class GantzAudioEngine {
     noise.start(now + 0.05);
     noise.stop(now + 0.28);
   }
+
+  // 5. Tactical Optical Scan / Inspection Zoom Lock-on Sound
+  playTacticalScan() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    // High tech optical lock-on chirp sequence
+    const freqs = [1500, 2200, 3100, 4400];
+    freqs.forEach((f, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const t = now + idx * 0.045;
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, t);
+      osc.frequency.exponentialRampToValueAtTime(f * 1.25, t + 0.04);
+
+      gain.gain.setValueAtTime(0.18, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+
+      osc.connect(gain);
+      gain.connect(this.getDestination());
+      osc.start(t);
+      osc.stop(t + 0.05);
+    });
+
+    // Sub sonar pulse
+    const subOsc = this.ctx.createOscillator();
+    const subGain = this.ctx.createGain();
+    subOsc.type = 'triangle';
+    subOsc.frequency.setValueAtTime(140, now);
+    subOsc.frequency.exponentialRampToValueAtTime(60, now + 0.35);
+    subGain.gain.setValueAtTime(0.3, now);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    subOsc.connect(subGain);
+    subGain.connect(this.getDestination());
+    subOsc.start(now);
+    subOsc.stop(now + 0.38);
+  }
 }
 
 window.GantzAudio = new GantzAudioEngine();

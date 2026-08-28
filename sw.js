@@ -1,5 +1,5 @@
 // Gantz Web PWA Service Worker - Offline Cache-First Strategy
-const CACHE_NAME = 'gantz-cache-v1.3';
+const CACHE_NAME = 'gantz-cache-v1.4';
 const STATIC_ASSETS = [
   './',
   './index.html',

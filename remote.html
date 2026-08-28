@@ -22,7 +22,8 @@
 
   <!-- Room Connection Hub & Saved Rooms Overlay -->
   <div class="room-connect-overlay" id="roomConnectOverlay">
-    <div class="room-connect-box" style="max-height: 90vh; overflow-y: auto;">
+    <div class="room-connect-box" style="max-height: 90vh; overflow-y: auto; position: relative;">
+      <button type="button" class="btn btn-sm btn-danger" style="position: absolute; top: 12px; right: 12px; padding: 4px 8px; font-size: 0.8rem; z-index: 10;" onclick="closeRoomConnectOverlay()">✕</button>
       <div class="room-connect-title">CONECTAR A <span>SALA GANTZ</span></div>
       <p style="font-size: 0.8rem; color: #94a3b8;">Ingresa el código PIN (ej: <strong>38VH</strong> o <strong>GANTZ-38VH</strong>):</p>
       
@@ -85,7 +86,7 @@
   <header class="remote-header">
     <div class="logo-wrap">
       <div class="remote-title">GANTZ <span>REMOTE</span></div>
-      <div class="sync-status">
+      <div class="sync-status" onclick="openRoomConnectOverlay()" style="cursor: pointer;" title="Toca para cambiar o gestionar salas">
         <span class="dot-indicator" id="syncDot"></span>
         <span id="syncText">SINCRONIZADO</span>
       </div>
@@ -382,8 +383,9 @@
         <!-- Live Image Preview & Dual Selector + Official Gallery + Framing Sliders -->
         <div class="form-group" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(0,240,255,0.25); border-radius: 8px; padding: 12px;">
           <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
-            <div style="width: 80px; height: 80px; border-radius: 6px; overflow: hidden; border: 2px solid #00ff66; box-shadow: 0 0 10px rgba(0,255,102,0.3); background: #000; flex-shrink: 0;">
-              <img id="alienPreviewImg" src="assets/webp/monsters/alien_cebolla_joven_recortado.webp" style="width: 100%; height: 100%; object-fit: cover; object-position: center top; transition: all 0.1s ease;">
+            <div id="alienPreviewContainer" class="inspect-touch-viewport" style="width: 88px; height: 88px; border-radius: 6px; overflow: hidden; border: 2px solid #00ff66; box-shadow: 0 0 12px rgba(0,255,102,0.35); background: #000; flex-shrink: 0; position: relative; touch-action: none;">
+              <img id="alienPreviewImg" src="assets/webp/monsters/alien_cebolla_joven_recortado.webp" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%; pointer-events: none;">
+              <div style="position: absolute; bottom: 0; left: 0; right: 0; font-size: 0.58rem; color: #00ff66; text-align: center; background: rgba(0,0,0,0.75); padding: 1px 0; font-weight: bold; letter-spacing: 1px;">🖐️ TÁCTIL</div>
             </div>
             <div style="flex: 1; text-align: left; display: flex; flex-direction: column; gap: 6px;">
               <input type="file" id="alienFileInput" accept="image/*" style="display: none;">
@@ -423,7 +425,7 @@
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="width: 85px; color: #94a3b8;">🔍 Zoom:</span>
-                <input type="range" id="alienFrameScale" min="100" max="250" value="105" style="flex: 1; accent-color: var(--gantz-gold);">
+                <input type="range" id="alienFrameScale" min="50" max="500" value="105" style="flex: 1; accent-color: var(--gantz-gold);">
                 <span id="labelFrameScale" style="width: 32px; text-align: right; color: var(--gantz-gold);">1.05x</span>
               </div>
             </div>
@@ -688,6 +690,82 @@
             ⏳ MÁS TARDE (CONTINUAR SESIÓN)
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: REAL-TIME OPTICAL ZOOM & INSPECTION CONTROLLER ==================== -->
+  <div class="modal-overlay" id="inspectControlModal" style="display: none; z-index: 10009;">
+    <div class="modal-content" style="max-width: 480px; border-color: var(--gantz-cyan); box-shadow: 0 0 35px rgba(0,240,255,0.3);">
+      <div class="card-header" style="border-bottom: 1px solid rgba(0,240,255,0.3); padding-bottom: 8px;">
+        <div class="card-title" style="color: var(--gantz-cyan); display: flex; align-items: center; gap: 8px;">
+          <span>🔍</span> <span id="inspectModalTitle">INSPECCIÓN ÓPTICA // GANTZ HUD</span>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="closeInspectControl()">✕ SALIR</button>
+      </div>
+
+      <!-- Target Info Mini Card -->
+      <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,240,255,0.2); border-radius: 6px; padding: 8px; margin: 10px 0 6px 0;">
+        <img id="inspectModalThumb" src="" style="width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1px solid #00f0ff; background: #000;">
+        <div style="text-align: left; flex: 1; overflow: hidden;">
+          <div id="inspectModalName" style="font-size: 0.95rem; font-weight: bold; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">OBJETIVO</div>
+          <div id="inspectModalSub" style="font-size: 0.72rem; color: var(--gantz-green);">EN ANÁLISIS EN PANTALLA GRANDE</div>
+        </div>
+      </div>
+
+      <!-- Interactive Touch Gestures Viewport (Pinch-to-zoom & Drag-to-pan) -->
+      <div id="inspectTouchViewport" class="inspect-touch-viewport" style="position: relative; width: 100%; height: 190px; border-radius: 8px; border: 2px solid var(--gantz-cyan); overflow: hidden; background: #000; margin-bottom: 10px; touch-action: none; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.85);">
+        <img id="inspectTouchImg" src="" alt="Tactical Zoom" style="width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; transform: scale(1); transform-origin: center center; pointer-events: none;">
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; font-size: 0.68rem; color: var(--gantz-cyan); text-align: center; background: rgba(0,0,0,0.7); padding: 3px 0; font-weight: bold; letter-spacing: 1px;">
+          🖐️ PELLIZCA PARA ZOOM (1x-5x) // ARRASTRA PARA MOVER
+        </div>
+        <div id="inspectTouchReticle" style="position: absolute; width: 34px; height: 34px; border: 2px dashed #00ff66; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); display: none; box-shadow: 0 0 8px #00ff66;"></div>
+      </div>
+
+      <!-- Real-time Zoom Control -->
+      <div style="background: rgba(6,8,13,0.8); border: 1px solid rgba(0,240,255,0.2); border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 0.8rem; font-weight: bold; color: var(--gantz-gold);">🔍 NIVEL DE ZOOM (EN VIVO):</span>
+          <span id="inspectZoomValLabel" style="font-size: 0.9rem; font-family: monospace; font-weight: bold; color: var(--gantz-gold); background: rgba(0,0,0,0.6); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,215,0,0.3);">1.00x</span>
+        </div>
+
+        <input type="range" id="remoteInspectZoomSlider" min="100" max="400" step="5" value="100" style="width: 100%; accent-color: var(--gantz-gold); margin-bottom: 10px;">
+
+        <!-- Quick Zoom Presets -->
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;">
+          <button type="button" class="btn btn-sm" onclick="setRemoteInspectZoom(1.0)">1.0x</button>
+          <button type="button" class="btn btn-sm" onclick="setRemoteInspectZoom(1.5)">1.5x</button>
+          <button type="button" class="btn btn-sm" onclick="setRemoteInspectZoom(2.0)">2.0x</button>
+          <button type="button" class="btn btn-sm" onclick="setRemoteInspectZoom(3.0)">3.0x</button>
+          <button type="button" class="btn btn-sm" onclick="setRemoteInspectZoom(4.0)">4.0x</button>
+        </div>
+      </div>
+
+      <!-- Pan & Framing Adjustment -->
+      <div style="background: rgba(6,8,13,0.8); border: 1px solid rgba(0,240,255,0.2); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 0.75rem; color: #94a3b8; font-weight: bold;">↔️ DESPLAZAMIENTO / ENCUADRE:</span>
+          <button type="button" class="btn btn-sm" onclick="resetRemoteInspectPan()" style="padding: 2px 8px; font-size: 0.65rem;">↺ Centrar</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.72rem;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 70px; color: #94a3b8;">↔️ Horizontal:</span>
+            <input type="range" id="remoteInspectPanX" min="0" max="100" value="50" style="flex: 1; accent-color: var(--gantz-cyan);">
+            <span id="remoteInspectPanXVal" style="width: 32px; text-align: right; color: var(--gantz-cyan);">50%</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 70px; color: #94a3b8;">↕️ Vertical:</span>
+            <input type="range" id="remoteInspectPanY" min="0" max="100" value="50" style="flex: 1; accent-color: var(--gantz-green);">
+            <span id="remoteInspectPanYVal" style="width: 32px; text-align: right; color: var(--gantz-green);">50%</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn btn-danger" onclick="closeInspectControl()" style="width: 100%; font-weight: bold;">
+          ❌ SALIR DE INSPECCIÓN Y VOLVER
+        </button>
       </div>
     </div>
   </div>

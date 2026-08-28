@@ -895,3 +895,25 @@ body {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* ==================== INTERACTIVE TOUCH ZOOM & PAN VIEWPORTS ==================== */
+.inspect-touch-viewport {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  cursor: grab;
+}
+
+.inspect-touch-viewport:active {
+  cursor: grabbing;
+}
+
+.inspect-touch-viewport img {
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.touch-active {
+  box-shadow: 0 0 15px var(--gantz-cyan) !important;
+}
