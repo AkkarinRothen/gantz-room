@@ -92,6 +92,16 @@
       updateUI();
     } else if (data.type === 'HAPTIC_PULSE') {
       vibrate(data.duration || 120);
+    } else if (data.type === 'INITIATIVE_UPDATE') {
+      const banner = document.getElementById('playerTurnBanner');
+      if (banner) {
+        if (selectedHunterId && String(data.activeId) === String(selectedHunterId)) {
+          banner.style.display = 'block';
+          vibrate([120, 60, 120]);
+        } else {
+          banner.style.display = 'none';
+        }
+      }
     }
   }
 

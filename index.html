@@ -30,6 +30,7 @@
       </div>
       <div class="room-pin-badge" id="hudRoomPin" title="Clic para ver o copiar PIN">SALA: GENERANDO...</div>
       <div class="room-pin-badge" id="hudConnectedDevices" style="border-color: rgba(0,255,102,0.3); color: #00ff66; font-size: 0.72rem;">📱 0 CONTROLES</div>
+      <div class="room-pin-badge" id="hudActiveTurn" style="display: none; border-color: #ffd700; color: #ffd700; font-weight: bold; font-size: 0.75rem;">⚔️ TURNO: --</div>
     </div>
     <div class="hud-right">
       <button class="hud-btn" id="btnCrtToggle" title="Activar/Desactivar Efecto CRT Scanlines">📺 CRT ON</button>
@@ -267,8 +268,15 @@
   <!-- Modal QR Code -->
   <div class="qr-modal" id="qrModal">
     <div class="qr-card">
-      <div class="qr-card-title">CONECTAR <span>TABLET / CELULAR</span></div>
-      <p style="font-size: 0.85rem; color: #94a3b8;">Escanea con la cámara de tu tablet o usa el PIN de la sala:</p>
+      <div class="qr-card-title">CONECTAR <span>DISPOSITIVOS</span></div>
+      
+      <!-- QR Type Selector Tabs -->
+      <div style="display: flex; gap: 6px; margin: 8px 0 10px 0;">
+        <button class="hud-btn" id="btnQrTypeMaster" style="flex: 1; border-color: var(--gantz-cyan); color: #fff; background: rgba(0,240,255,0.2); font-size: 0.75rem; padding: 6px;">📱 CONTROL MASTER</button>
+        <button class="hud-btn" id="btnQrTypePlayers" style="flex: 1; border-color: var(--gantz-green); color: var(--gantz-green); background: transparent; font-size: 0.75rem; padding: 6px;">👥 PANTALLA JUGADORES</button>
+      </div>
+
+      <p id="qrInstructionsText" style="font-size: 0.82rem; color: #94a3b8;">Escanea con la tablet del Master para controlar la partida:</p>
       
       <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 10px 0;">
         <div class="qr-pin-display" id="qrPinDisplay" style="margin: 0;">GANTZ-XXXX</div>

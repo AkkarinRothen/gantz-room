@@ -1176,6 +1176,94 @@
     sendDisplay({ type: 'SET_MODE', mode: 'scoring' });
   });
 
+  // ==================== SHADOWDARK INITIATIVE & TURN TRACKER ====================
+  let initiativeQueue = [];
+  let currentTurnIndex = -1;
+
+  window.rollInitiative = function() {
+    vibrate(45);
+    initiativeQueue = [];
+    const hunters = appState?.hunters || [];
+    hunters.forEach(h => {
+      if (!h.isDead && h.status !== 'dead') {
+        const roll = Math.floor(Math.random() * 20) + 1;
+        initiativeQueue.push({
+          id: h.id,
+          name: h.name,
+          roll: roll,
+          isAlien: false
+        });
+      }
+    });
+
+    const alien = appState?.currentAlien;
+    if (alien) {
+      const alienRoll = Math.floor(Math.random() * 20) + 1;
+      initiativeQueue.push({
+        id: alien.id || 'alien',
+        name: `👾 ${alien.name}`,
+        roll: alienRoll,
+        isAlien: true
+      });
+    }
+
+    initiativeQueue.sort((a, b) => b.roll - a.roll);
+    currentTurnIndex = 0;
+    renderInitiativeList();
+    broadcastActiveTurn();
+  };
+
+  window.nextTurn = function() {
+    vibrate(35);
+    if (initiativeQueue.length === 0) {
+      rollInitiative();
+      return;
+    }
+    currentTurnIndex = (currentTurnIndex + 1) % initiativeQueue.length;
+    renderInitiativeList();
+    broadcastActiveTurn();
+  };
+
+  function broadcastActiveTurn() {
+    const current = initiativeQueue[currentTurnIndex];
+    const activeName = current ? current.name : '';
+    const activeId = current ? current.id : '';
+
+    const initiativeStatusText = document.getElementById('initiativeStatusText');
+    if (initiativeStatusText) {
+      initiativeStatusText.textContent = activeName ? `TURNO: ${activeName.toUpperCase()}` : 'TURNO: --';
+    }
+
+    sendDisplay({
+      type: 'INITIATIVE_UPDATE',
+      activeName: activeName,
+      activeId: activeId,
+      queue: initiativeQueue
+    });
+  }
+
+  function renderInitiativeList() {
+    const container = document.getElementById('initiativeListContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (initiativeQueue.length === 0) {
+      container.innerHTML = '<div style="font-size: 0.72rem; color: #64748b; text-align: center;">Sin iniciativa activa. Toca "Tirar Iniciativa"</div>';
+      return;
+    }
+
+    initiativeQueue.forEach((item, idx) => {
+      const isActive = idx === currentTurnIndex;
+      const row = document.createElement('div');
+      row.style.cssText = `display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-radius: 4px; font-size: 0.78rem; font-family: monospace; ${isActive ? 'background: rgba(255,215,0,0.2); border: 1px solid #ffd700; color: #fff; font-weight: bold;' : 'background: #090d16; border: 1px solid #1e293b; color: #94a3b8;'}`;
+      row.innerHTML = `
+        <span>${isActive ? '⚔️ ' : ''}#${idx + 1} ${escapeHtml(item.name)}</span>
+        <span style="color: ${item.isAlien ? '#ff003c' : 'var(--gantz-gold)'}; font-weight: bold;">d20: ${item.roll}</span>
+      `;
+      container.appendChild(row);
+    });
+  }
+
   // 4. BROADCAST
   btnSendCustomMsg.addEventListener('click', () => {
     vibrate(35);

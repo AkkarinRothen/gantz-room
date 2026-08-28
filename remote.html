@@ -204,6 +204,22 @@
         </div>
         <div class="hunter-grid" id="huntersContainer"></div>
       </div>
+
+      <!-- Shadowdark Initiative & Turn Tracker -->
+      <div class="card" style="margin-top: 14px;">
+        <div class="card-header">
+          <div class="card-title">⚔️ INICIATIVA Y GESTOR DE TURNOS</div>
+          <span id="initiativeStatusText" style="font-size: 0.72rem; color: #ffd700; font-weight: bold;">TURNO: --</span>
+        </div>
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px;">
+          Lanza iniciativa d20 para el grupo o avanza el turno en combate:
+        </div>
+        <div class="btn-grid-2" style="margin-bottom: 10px;">
+          <button type="button" class="btn btn-gold btn-sm" onclick="rollInitiative()">🎲 Tirar Iniciativa</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="nextTurn()">▶ Siguiente Turno</button>
+        </div>
+        <div id="initiativeListContainer" style="display: flex; flex-direction: column; gap: 4px;"></div>
+      </div>
     </div>
 
     <!-- ==================== TAB 4: LIVE BROADCAST / TERMINAL ==================== -->

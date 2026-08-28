@@ -198,8 +198,50 @@
     });
   }
 
-  // QR Modal Toggle
-  btnOpenQR.addEventListener('click', () => qrModal.classList.add('active'));
+  // QR Modal Toggle & Tabs (Master vs Players)
+  const btnQrTypeMaster = document.getElementById('btnQrTypeMaster');
+  const btnQrTypePlayers = document.getElementById('btnQrTypePlayers');
+  const qrInstructionsText = document.getElementById('qrInstructionsText');
+  let currentQrTarget = 'remote'; // 'remote' or 'player'
+
+  function updateQrDisplay() {
+    const origin = window.location.origin + window.location.pathname.replace('index.html', '');
+    const cleanOrigin = origin.endsWith('/') ? origin : origin + '/';
+    const targetFile = currentQrTarget === 'player' ? 'player.html' : 'remote.html';
+    const url = `${cleanOrigin}${targetFile}?room=${roomId}`;
+    renderQRCode(url);
+    if (qrUrlText) qrUrlText.textContent = url;
+    if (qrInstructionsText) {
+      qrInstructionsText.textContent = currentQrTarget === 'player' 
+        ? 'Escanea para vincular la pantalla del jugador (Traje G-Suit, Radar y Estado):'
+        : 'Escanea con la tablet del Master para controlar la partida:';
+    }
+  }
+
+  if (btnQrTypeMaster && btnQrTypePlayers) {
+    btnQrTypeMaster.addEventListener('click', () => {
+      currentQrTarget = 'remote';
+      btnQrTypeMaster.style.background = 'rgba(0,240,255,0.2)';
+      btnQrTypeMaster.style.color = '#fff';
+      btnQrTypePlayers.style.background = 'transparent';
+      btnQrTypePlayers.style.color = 'var(--gantz-green)';
+      updateQrDisplay();
+    });
+
+    btnQrTypePlayers.addEventListener('click', () => {
+      currentQrTarget = 'player';
+      btnQrTypePlayers.style.background = 'rgba(0,255,102,0.2)';
+      btnQrTypePlayers.style.color = '#fff';
+      btnQrTypeMaster.style.background = 'transparent';
+      btnQrTypeMaster.style.color = 'var(--gantz-cyan)';
+      updateQrDisplay();
+    });
+  }
+
+  btnOpenQR.addEventListener('click', () => {
+    updateQrDisplay();
+    qrModal.classList.add('active');
+  });
   btnCloseQR.addEventListener('click', () => qrModal.classList.remove('active'));
 
   function renderQRCode(url) {
@@ -209,7 +251,7 @@
         text: url,
         width: 200,
         height: 200,
-        colorDark: "#00ff66",
+        colorDark: currentQrTarget === 'player' ? "#00f0ff" : "#00ff66",
         colorLight: "#05070a",
         correctLevel: QRCode.CorrectLevel.M
       });
@@ -661,6 +703,18 @@
             btnCrtToggle.style.color = isActive ? '#00ff66' : '#94a3b8';
           }
           log(`Filtro CRT ${isActive ? 'activado' : 'desactivado'} desde control remoto`);
+        }
+        break;
+
+      case 'INITIATIVE_UPDATE':
+        const hudActiveTurn = document.getElementById('hudActiveTurn');
+        if (hudActiveTurn) {
+          if (msg.activeName) {
+            hudActiveTurn.style.display = 'inline-block';
+            hudActiveTurn.textContent = `⚔️ TURNO: ${msg.activeName.toUpperCase()}`;
+          } else {
+            hudActiveTurn.style.display = 'none';
+          }
         }
         break;
     }
