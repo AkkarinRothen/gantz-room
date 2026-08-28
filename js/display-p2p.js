@@ -93,6 +93,21 @@
   const rewardResolutionTitle = document.getElementById('rewardResolutionTitle');
   const rewardResolutionBody = document.getElementById('rewardResolutionBody');
 
+  // Inspection Mode Elements
+  const viewInspect = document.getElementById('viewInspect');
+  const inspectHudTag = document.getElementById('inspectHudTag');
+  const inspectTargetName = document.getElementById('inspectTargetName');
+  const inspectTargetSub = document.getElementById('inspectTargetSub');
+  const inspectZoomBadge = document.getElementById('inspectZoomBadge');
+  const inspectLensInfo = document.getElementById('inspectLensInfo');
+  const inspectViewport = document.getElementById('inspectViewport');
+  const inspectImgFrame = document.getElementById('inspectImgFrame');
+  const inspectMainImg = document.getElementById('inspectMainImg');
+  const inspectHudFooter = document.getElementById('inspectHudFooter');
+  const inspectFooterQuote = document.getElementById('inspectFooterQuote');
+  const inspectStatPill1 = document.getElementById('inspectStatPill1');
+  const inspectStatPill2 = document.getElementById('inspectStatPill2');
+
   const qrModal = document.getElementById('qrModal');
   const qrPinDisplay = document.getElementById('qrPinDisplay');
   const qrContainer = document.getElementById('qrContainer');
@@ -311,15 +326,27 @@
     viewWeapon.style.display = 'none';
     if (viewRadar) viewRadar.style.display = 'none';
     if (view100Pts) view100Pts.style.display = 'none';
+    if (viewInspect) viewInspect.style.display = 'none';
     
     sphereAssembly.classList.remove('is-open', 'active-mission');
     sphereDoors.style.display = 'none';
 
     hudStatusText.textContent = mode.toUpperCase();
+    if (mode !== 'inspect') {
+      appState.previousMode = appState.mode;
+    }
     appState.mode = mode;
     saveState();
 
     switch (mode) {
+      case 'inspect':
+        if (viewInspect) viewInspect.style.display = 'flex';
+        if (window.GantzAudio && typeof window.GantzAudio.playTacticalScan === 'function') {
+          window.GantzAudio.playTacticalScan();
+        } else if (window.GantzAudio) {
+          window.GantzAudio.playSphereBoot();
+        }
+        break;
       case '100pts':
         if (view100Pts) view100Pts.style.display = 'flex';
         const h = appState.rewardHunter || (appState.hunters && appState.hunters[0]);
@@ -568,11 +595,106 @@
         setMode('briefing');
         break;
 
+      case 'SAVE_ALIEN': {
+        const alien = msg.alien;
+        if (alien) {
+          const idx = aliensList.findIndex(a => a.id === alien.id);
+          if (idx >= 0) aliensList[idx] = alien;
+          else aliensList.push(alien);
+
+          if (appState.currentAlien && appState.currentAlien.id === alien.id) {
+            appState.currentAlien = alien;
+            if (appState.mode === 'briefing') {
+              setMode('briefing');
+            }
+          }
+          saveState();
+          sendRemote({ type: 'ALIENS_LIST_UPDATED', aliens: aliensList });
+        }
+        break;
+      }
+
+      case 'LIVE_ALIEN_FRAMING': {
+        if (briefingImg && appState.mode === 'briefing') {
+          if (msg.posX !== undefined && msg.posY !== undefined) {
+            briefingImg.style.objectPosition = `${msg.posX}% ${msg.posY}%`;
+          }
+          if (msg.scale !== undefined) {
+            briefingImg.style.transform = `scale(${msg.scale})`;
+          }
+        }
+        break;
+      }
+
       case 'SELECT_WEAPON':
         appState.currentWeapon = msg.weapon;
         saveState();
         setMode('weapon');
         break;
+
+      case 'SAVE_WEAPON': {
+        const wpn = msg.weapon;
+        if (wpn) {
+          const idx = weaponsList.findIndex(w => w.id === wpn.id);
+          if (idx >= 0) weaponsList[idx] = wpn;
+          else weaponsList.push(wpn);
+
+          if (appState.currentWeapon && appState.currentWeapon.id === wpn.id) {
+            appState.currentWeapon = wpn;
+            if (appState.mode === 'weapon') {
+              setMode('weapon');
+            }
+          }
+          saveState();
+          sendRemote({ type: 'WEAPONS_LIST_UPDATED', weapons: weaponsList });
+        }
+        break;
+      }
+
+      case 'INSPECT_MEDIA': {
+        const { image, title, subtitle, quote, stat1, stat2, tag, scale, posX, posY } = msg;
+        if (inspectMainImg) {
+          inspectMainImg.src = image || 'assets/webp/monsters/alien_cebolla_joven_recortado.webp';
+          inspectMainImg.style.transform = `scale(${scale || 1.0})`;
+          inspectMainImg.style.objectPosition = `${posX !== undefined ? posX : 50}% ${posY !== undefined ? posY : 50}%`;
+        }
+        if (inspectTargetName) inspectTargetName.textContent = (title || 'OBJETIVO').toUpperCase();
+        if (inspectTargetSub) inspectTargetSub.textContent = (subtitle || 'ANÁLISIS BIOMÉTRICO').toUpperCase();
+        if (inspectHudTag) inspectHudTag.textContent = tag || '🔬 ANÁLISIS ÓPTICO // GANTZ HUD';
+        if (inspectFooterQuote) inspectFooterQuote.textContent = quote ? `"${quote}"` : '"VUESTRAS VIDAS ME PERTENECEN."';
+        if (inspectStatPill1) inspectStatPill1.textContent = stat1 || '🎯 BLANCO FIJADO';
+        if (inspectStatPill2) inspectStatPill2.textContent = stat2 || '⚡ ANÁLISIS ÓPTICO EN VIVO';
+        if (inspectZoomBadge) inspectZoomBadge.textContent = `ZOOM ${parseFloat(scale || 1.0).toFixed(2)}x`;
+        if (inspectLensInfo) inspectLensInfo.textContent = `POSICIÓN: ${posX || 50}% X / ${posY || 50}% Y`;
+
+        appState.inspectData = msg;
+        setMode('inspect');
+        break;
+      }
+
+      case 'INSPECT_ZOOM_UPDATE': {
+        const { scale, posX, posY } = msg;
+        if (inspectMainImg) {
+          if (scale !== undefined) inspectMainImg.style.transform = `scale(${scale})`;
+          if (posX !== undefined && posY !== undefined) {
+            inspectMainImg.style.objectPosition = `${posX}% ${posY}%`;
+          }
+        }
+        if (inspectZoomBadge && scale !== undefined) {
+          inspectZoomBadge.textContent = `ZOOM ${parseFloat(scale).toFixed(2)}x`;
+        }
+        if (inspectLensInfo && posX !== undefined && posY !== undefined) {
+          inspectLensInfo.textContent = `POSICIÓN: ${posX}% X / ${posY}% Y`;
+        }
+        break;
+      }
+
+      case 'CLOSE_INSPECT': {
+        const returnMode = appState.previousMode || (appState.currentAlien ? 'briefing' : (appState.currentWeapon ? 'weapon' : 'standby'));
+        if (window.GantzAudio) window.GantzAudio.playClick();
+        setMode(returnMode === 'inspect' ? 'briefing' : returnMode);
+        break;
+      }
 
       case 'FIRE_WEAPON':
         if (window.GantzAudio) {

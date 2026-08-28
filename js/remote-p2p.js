@@ -272,6 +272,13 @@
       window.GantzLogger.updateState('roomId', clean);
     }
 
+    // Update URL query parameter
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.set('room', clean);
+      window.history.replaceState(null, '', u.toString());
+    } catch (e) {}
+
     log(`Iniciando conexión con la sala [${clean}]...`);
     
     // UI Visual status connecting
@@ -291,6 +298,12 @@
       if (roomConnectOverlay) roomConnectOverlay.style.display = 'none';
     }, 600);
 
+    // Close any previous WebRTC connection if changing rooms
+    if (conn) {
+      try { conn.close(); } catch (e) {}
+      conn = null;
+    }
+
     // Layer 1: Try Local WebSocket if on localhost
     if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
       try {
@@ -309,6 +322,9 @@
               handleServerMessage(data);
             } catch (e) {}
           };
+        } else if (localWS.readyState === WebSocket.OPEN) {
+          sendDisplay({ type: 'REQUEST_SYNC' });
+          setConnectedUI(clean);
         }
       } catch (e) {}
     }
@@ -361,10 +377,17 @@
         });
       } else if (peer.open) {
         doPeerConnect();
+      } else if (peer.disconnected) {
+        peer.reconnect();
+        peer.once('open', () => doPeerConnect());
       }
 
       function doPeerConnect() {
         logNet(`Intentando conexión WebRTC a Display [${roomId}]...`);
+        if (conn) {
+          try { conn.close(); } catch (e) {}
+          conn = null;
+        }
         conn = peer.connect(roomId, { reliable: true });
 
         conn.on('open', () => {
@@ -411,6 +434,17 @@
     } catch (e) {}
   }
 
+  window.connectToRoom = connectToRoom;
+  window.openRoomConnectOverlay = function() {
+    vibrate(20);
+    renderSavedRooms();
+    if (roomConnectOverlay) roomConnectOverlay.style.display = 'flex';
+  };
+  window.closeRoomConnectOverlay = function() {
+    vibrate(20);
+    if (roomConnectOverlay) roomConnectOverlay.style.display = 'none';
+  };
+
   let heartbeatTimer = null;
   let lastPingSent = 0;
   let missedPongs = 0;
@@ -419,7 +453,7 @@
   function startHeartbeat() {
     if (heartbeatTimer) clearInterval(heartbeatTimer);
     heartbeatTimer = setInterval(() => {
-      if (activeConnection && activeConnection.open) {
+      if (conn && conn.open) {
         lastPingSent = Date.now();
         sendDisplay({ type: 'PING', timestamp: lastPingSent });
         missedPongs++;
@@ -593,6 +627,9 @@
           <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-cyan'}" onclick="selectAlien('${alien.id}')">
             ${isSelected ? '✓ EN PANTALLA' : 'Proyectar'}
           </button>
+          <button class="btn btn-sm btn-gold" onclick="inspectAlien('${alien.id}')" title="Inspección táctica con zoom en pantalla grande">
+            🔍 Zoom
+          </button>
           <button class="btn btn-sm" onclick="editAlien('${alien.id}')">✏️</button>
         </div>
       `;
@@ -652,17 +689,11 @@
     }
   };
 
-  // Framing controls elements
-  const alienFramePosY = document.getElementById('alienFramePosY');
-  const alienFramePosX = document.getElementById('alienFramePosX');
-  const alienFrameScale = document.getElementById('alienFrameScale');
-  const labelFramePosY = document.getElementById('labelFramePosY');
-  const labelFramePosX = document.getElementById('labelFramePosX');
-  const labelFrameScale = document.getElementById('labelFrameScale');
+  const alienPreviewContainer = document.getElementById('alienPreviewContainer');
 
   function updatePreviewFraming() {
-    const y = alienFramePosY ? alienFramePosY.value : 0;
-    const x = alienFramePosX ? alienFramePosX.value : 50;
+    const y = alienFramePosY ? parseInt(alienFramePosY.value, 10) : 0;
+    const x = alienFramePosX ? parseInt(alienFramePosX.value, 10) : 50;
     const scale = alienFrameScale ? (alienFrameScale.value / 100).toFixed(2) : 1.05;
 
     if (labelFramePosY) labelFramePosY.textContent = `${y}%`;
@@ -673,11 +704,40 @@
       alienPreviewImg.style.objectPosition = `${x}% ${y}%`;
       alienPreviewImg.style.transform = `scale(${scale})`;
     }
+
+    sendDisplay({
+      type: 'LIVE_ALIEN_FRAMING',
+      posX: x,
+      posY: y,
+      scale: scale
+    });
   }
 
   if (alienFramePosY) alienFramePosY.addEventListener('input', updatePreviewFraming);
   if (alienFramePosX) alienFramePosX.addEventListener('input', updatePreviewFraming);
   if (alienFrameScale) alienFrameScale.addEventListener('input', updatePreviewFraming);
+
+  // Initialize Touch gestures on Alien Preview Box
+  if (alienPreviewContainer && alienPreviewImg) {
+    initTouchZoomPan(
+      alienPreviewContainer,
+      alienPreviewImg,
+      () => ({
+        posX: alienFramePosX ? parseInt(alienFramePosX.value, 10) : 50,
+        posY: alienFramePosY ? parseInt(alienFramePosY.value, 10) : 0,
+        scale: alienFrameScale ? parseFloat((alienFrameScale.value / 100).toFixed(2)) : 1.05
+      }),
+      (vals) => {
+        if (alienFramePosX) alienFramePosX.value = Math.round(vals.posX);
+        if (alienFramePosY) alienFramePosY.value = Math.round(vals.posY);
+        if (alienFrameScale) alienFrameScale.value = Math.round(vals.scale * 100);
+        updatePreviewFraming();
+      },
+      () => {
+        updatePreviewFraming();
+      }
+    );
+  }
 
   window.quickFramePosition = function(y, x, scale) {
     vibrate(20);
@@ -820,6 +880,9 @@
         <div class="monster-actions" style="display: flex; flex-direction: column; gap: 4px; min-width: 95px;">
           <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-cyan'}" onclick="selectWeapon('${wpn.id}')" style="font-size: 0.72rem; padding: 4px 6px;">
             ${isSelected ? '✓ EN PANTALLA' : '📺 Proyectar'}
+          </button>
+          <button class="btn btn-sm btn-gold" onclick="inspectWeapon('${wpn.id}')" style="font-size: 0.72rem; padding: 4px 6px;" title="Inspección táctica con zoom en pantalla grande">
+            🔍 Zoom
           </button>
           <button class="btn btn-sm ${isRevealed ? 'btn-danger' : 'btn-gold'}" onclick="toggleRevealWeapon('${wpn.id}')" style="font-size: 0.72rem; padding: 4px 6px;" title="${isRevealed ? 'Ocultar mecánicas a jugadores' : 'Revelar mecánicas en la Esfera'}">
             ${isRevealed ? '🔒 Ocultar' : '👁️ Revelar'}
@@ -1988,6 +2051,337 @@
       };
       reader.readAsText(file);
     });
+  }
+
+  // ==================== MULTI-TOUCH GESTURE ENGINE (PINCH-TO-ZOOM & PAN) ====================
+  function initTouchZoomPan(container, imgElement, getValues, setValues, onUpdate) {
+    if (!container || !imgElement) return;
+
+    let startX = 0;
+    let startY = 0;
+    let initialPosX = 50;
+    let initialPosY = 50;
+    let initialScale = 1.0;
+    let startDist = 0;
+    let isTouching = false;
+    let lastTapTime = 0;
+
+    function getDistance(t1, t2) {
+      return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    }
+
+    container.addEventListener('touchstart', (e) => {
+      isTouching = true;
+      container.classList.add('touch-active');
+
+      const now = Date.now();
+      if (e.touches.length === 1 && (now - lastTapTime < 320)) {
+        // Double tap toggle
+        vibrate(35);
+        const cur = getValues();
+        const newScale = cur.scale > 1.4 ? 1.0 : 2.5;
+        setValues({ scale: newScale, posX: 50, posY: 50 });
+        if (onUpdate) onUpdate();
+        lastTapTime = 0;
+        return;
+      }
+      lastTapTime = now;
+
+      const cur = getValues();
+      initialPosX = cur.posX;
+      initialPosY = cur.posY;
+      initialScale = cur.scale;
+
+      if (e.touches.length === 1) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      } else if (e.touches.length >= 2) {
+        startDist = getDistance(e.touches[0], e.touches[1]);
+        startX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        startY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      }
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+      if (!isTouching) return;
+
+      const rect = container.getBoundingClientRect();
+      const current = getValues();
+      let newScale = current.scale;
+      let newPosX = current.posX;
+      let newPosY = current.posY;
+
+      // 2 fingers = Pinch zoom + pan
+      if (e.touches.length >= 2) {
+        const currentDist = getDistance(e.touches[0], e.touches[1]);
+        if (startDist > 0) {
+          const ratio = currentDist / startDist;
+          newScale = Math.min(5.0, Math.max(0.5, parseFloat((initialScale * ratio).toFixed(2))));
+        }
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        const deltaX = ((midX - startX) / rect.width) * 100;
+        const deltaY = ((midY - startY) / rect.height) * 100;
+        newPosX = Math.min(100, Math.max(0, Math.round(initialPosX - deltaX)));
+        newPosY = Math.min(100, Math.max(0, Math.round(initialPosY - deltaY)));
+      } else if (e.touches.length === 1) {
+        // 1 finger = Pan
+        const deltaX = ((e.touches[0].clientX - startX) / rect.width) * 100;
+        const deltaY = ((e.touches[0].clientY - startY) / rect.height) * 100;
+        newPosX = Math.min(100, Math.max(0, Math.round(initialPosX - deltaX)));
+        newPosY = Math.min(100, Math.max(0, Math.round(initialPosY - deltaY)));
+      }
+
+      setValues({ scale: newScale, posX: newPosX, posY: newPosY });
+      if (onUpdate) onUpdate();
+    }, { passive: true });
+
+    function onEnd() {
+      if (isTouching) {
+        isTouching = false;
+        container.classList.remove('touch-active');
+      }
+    }
+
+    container.addEventListener('touchend', onEnd);
+    container.addEventListener('touchcancel', onEnd);
+
+    // Mouse drag support for PC browser testing
+    let isMouseDown = false;
+    container.addEventListener('mousedown', (e) => {
+      isMouseDown = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const cur = getValues();
+      initialPosX = cur.posX;
+      initialPosY = cur.posY;
+      initialScale = cur.scale;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isMouseDown) return;
+      const rect = container.getBoundingClientRect();
+      const deltaX = ((e.clientX - startX) / rect.width) * 100;
+      const deltaY = ((e.clientY - startY) / rect.height) * 100;
+      const newPosX = Math.min(100, Math.max(0, Math.round(initialPosX - deltaX)));
+      const newPosY = Math.min(100, Math.max(0, Math.round(initialPosY - deltaY)));
+      setValues({ scale: initialScale, posX: newPosX, posY: newPosY });
+      if (onUpdate) onUpdate();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isMouseDown = false;
+    });
+
+    // Mouse wheel zoom support
+    container.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const cur = getValues();
+      const delta = e.deltaY < 0 ? 0.15 : -0.15;
+      const newScale = Math.min(5.0, Math.max(0.5, parseFloat((cur.scale + delta).toFixed(2))));
+      setValues({ scale: newScale, posX: cur.posX, posY: cur.posY });
+      if (onUpdate) onUpdate();
+    }, { passive: false });
+  }
+
+  // ==================== REAL-TIME OPTICAL ZOOM & INSPECTION ENGINE ====================
+  let activeInspectTarget = null;
+  let inspectZoomThrottleTimer = null;
+
+  const inspectControlModal = document.getElementById('inspectControlModal');
+  const inspectModalTitle = document.getElementById('inspectModalTitle');
+  const inspectModalThumb = document.getElementById('inspectModalThumb');
+  const inspectModalName = document.getElementById('inspectModalName');
+  const inspectModalSub = document.getElementById('inspectModalSub');
+  const inspectZoomValLabel = document.getElementById('inspectZoomValLabel');
+  const remoteInspectZoomSlider = document.getElementById('remoteInspectZoomSlider');
+  const remoteInspectPanX = document.getElementById('remoteInspectPanX');
+  const remoteInspectPanY = document.getElementById('remoteInspectPanY');
+  const remoteInspectPanXVal = document.getElementById('remoteInspectPanXVal');
+  const remoteInspectPanYVal = document.getElementById('remoteInspectPanYVal');
+  const inspectTouchViewport = document.getElementById('inspectTouchViewport');
+  const inspectTouchImg = document.getElementById('inspectTouchImg');
+  const inspectTouchReticle = document.getElementById('inspectTouchReticle');
+
+  window.inspectAlien = function(alienId) {
+    vibrate(40);
+    const alien = aliensList.find(a => a.id === alienId);
+    if (!alien) return;
+
+    activeInspectTarget = {
+      type: 'alien',
+      id: alien.id,
+      title: alien.name || 'ALIEN',
+      subtitle: `${alien.category || 'Misión'} // ${alien.points || 0} Puntos`,
+      quote: alien.quote || '...',
+      stat1: `🎯 VALOR: ${alien.points || 0} PTS`,
+      stat2: `💚 GUSTO: ${alien.likes || 'Desconocido'}`,
+      tag: '🔬 ANÁLISIS BIOMÉTRICO ÓPTICO // GANTZ HUD',
+      image: alien.image || 'assets/webp/monsters/alien_cebolla_joven_recortado.webp',
+      scale: 1.0,
+      posX: 50,
+      posY: 50
+    };
+
+    openInspectModalWithTarget(activeInspectTarget);
+  };
+
+  window.inspectWeapon = function(weaponId) {
+    vibrate(40);
+    const wpn = weaponsList.find(w => w.id === weaponId);
+    if (!wpn) return;
+
+    activeInspectTarget = {
+      type: 'weapon',
+      id: wpn.id,
+      title: wpn.name || 'EQUIPAMIENTO',
+      subtitle: `${wpn.category || 'Armamento'} // Alcance: ${wpn.range || 'Medio'}`,
+      quote: wpn.quote || wpn.description || '...',
+      stat1: `💥 DAÑO: ${wpn.damageInfo || '2d10'}`,
+      stat2: `🔒 ESTADO: ${wpn.isRevealed ? 'REVELADA' : 'CLASIFICADA'}`,
+      tag: '🔬 ANÁLISIS DE ARSENAL TÁCTICO // GANTZ HUD',
+      image: wpn.image || 'assets/webp/weapons/civil_y_pistola_alienigena_en_retroceso.webp',
+      scale: 1.0,
+      posX: 50,
+      posY: 50
+    };
+
+    openInspectModalWithTarget(activeInspectTarget);
+  };
+
+  window.inspectCustomMedia = function(imagePath, title = 'IMAGEN', category = 'GALERÍA') {
+    vibrate(40);
+    activeInspectTarget = {
+      type: 'custom',
+      id: 'custom_' + Date.now(),
+      title: title,
+      subtitle: category,
+      quote: 'REGISTRO VISUAL EN MEMORIA DE LA ESFERA',
+      stat1: '🖼️ ARCHIVO OFICIAL',
+      stat2: '⚡ INSPECCIÓN EN VIVO',
+      tag: '🔬 VISUALIZACIÓN HOLOGRÁFICA // GANTZ HUD',
+      image: imagePath,
+      scale: 1.0,
+      posX: 50,
+      posY: 50
+    };
+
+    openInspectModalWithTarget(activeInspectTarget);
+  };
+
+  function openInspectModalWithTarget(target) {
+    if (inspectModalTitle) inspectModalTitle.textContent = `INSPECCIÓN: ${(target.title || 'OBJETIVO').toUpperCase()}`;
+    if (inspectModalName) inspectModalName.textContent = (target.title || 'OBJETIVO').toUpperCase();
+    if (inspectModalSub) inspectModalSub.textContent = target.subtitle || 'EN ANÁLISIS';
+    if (inspectModalThumb) inspectModalThumb.src = target.image;
+    if (inspectTouchImg) {
+      inspectTouchImg.src = target.image;
+      inspectTouchImg.style.transform = 'scale(1)';
+      inspectTouchImg.style.objectPosition = '50% 50%';
+    }
+
+    if (remoteInspectZoomSlider) remoteInspectZoomSlider.value = 100;
+    if (inspectZoomValLabel) inspectZoomValLabel.textContent = '1.00x';
+    if (remoteInspectPanX) remoteInspectPanX.value = 50;
+    if (remoteInspectPanY) remoteInspectPanY.value = 50;
+    if (remoteInspectPanXVal) remoteInspectPanXVal.textContent = '50%';
+    if (remoteInspectPanYVal) remoteInspectPanYVal.textContent = '50%';
+
+    if (inspectControlModal) inspectControlModal.style.display = 'flex';
+
+    // Broadcast INSPECT_MEDIA to display
+    sendDisplay({
+      type: 'INSPECT_MEDIA',
+      image: target.image,
+      title: target.title,
+      subtitle: target.subtitle,
+      quote: target.quote,
+      stat1: target.stat1,
+      stat2: target.stat2,
+      tag: target.tag,
+      scale: target.scale,
+      posX: target.posX,
+      posY: target.posY
+    });
+  }
+
+  function emitInspectZoomUpdate() {
+    if (!activeInspectTarget) return;
+    const scale = (parseFloat(remoteInspectZoomSlider.value) / 100).toFixed(2);
+    const posX = parseInt(remoteInspectPanX.value, 10);
+    const posY = parseInt(remoteInspectPanY.value, 10);
+
+    if (inspectZoomValLabel) inspectZoomValLabel.textContent = `${scale}x`;
+    if (remoteInspectPanXVal) remoteInspectPanXVal.textContent = `${posX}%`;
+    if (remoteInspectPanYVal) remoteInspectPanYVal.textContent = `${posY}%`;
+
+    if (inspectTouchImg) {
+      inspectTouchImg.style.transform = `scale(${scale})`;
+      inspectTouchImg.style.objectPosition = `${posX}% ${posY}%`;
+    }
+
+    activeInspectTarget.scale = scale;
+    activeInspectTarget.posX = posX;
+    activeInspectTarget.posY = posY;
+
+    // Send with light throttle
+    if (inspectZoomThrottleTimer) clearTimeout(inspectZoomThrottleTimer);
+    inspectZoomThrottleTimer = setTimeout(() => {
+      sendDisplay({
+        type: 'INSPECT_ZOOM_UPDATE',
+        scale: scale,
+        posX: posX,
+        posY: posY
+      });
+    }, 20);
+  }
+
+  window.setRemoteInspectZoom = function(val) {
+    vibrate(20);
+    if (remoteInspectZoomSlider) {
+      remoteInspectZoomSlider.value = Math.round(val * 100);
+      emitInspectZoomUpdate();
+    }
+  };
+
+  window.resetRemoteInspectPan = function() {
+    vibrate(20);
+    if (remoteInspectPanX) remoteInspectPanX.value = 50;
+    if (remoteInspectPanY) remoteInspectPanY.value = 50;
+    emitInspectZoomUpdate();
+  };
+
+  window.closeInspectControl = function() {
+    vibrate(30);
+    activeInspectTarget = null;
+    if (inspectControlModal) inspectControlModal.style.display = 'none';
+    sendDisplay({ type: 'CLOSE_INSPECT' });
+  };
+
+  if (remoteInspectZoomSlider) remoteInspectZoomSlider.addEventListener('input', emitInspectZoomUpdate);
+  if (remoteInspectPanX) remoteInspectPanX.addEventListener('input', emitInspectZoomUpdate);
+  if (remoteInspectPanY) remoteInspectPanY.addEventListener('input', emitInspectZoomUpdate);
+
+  // Initialize Touch gestures on Inspection Viewport
+  if (inspectTouchViewport && inspectTouchImg) {
+    initTouchZoomPan(
+      inspectTouchViewport,
+      inspectTouchImg,
+      () => ({
+        posX: remoteInspectPanX ? parseInt(remoteInspectPanX.value, 10) : 50,
+        posY: remoteInspectPanY ? parseInt(remoteInspectPanY.value, 10) : 50,
+        scale: remoteInspectZoomSlider ? parseFloat((remoteInspectZoomSlider.value / 100).toFixed(2)) : 1.0
+      }),
+      (vals) => {
+        if (remoteInspectPanX) remoteInspectPanX.value = Math.round(vals.posX);
+        if (remoteInspectPanY) remoteInspectPanY.value = Math.round(vals.posY);
+        if (remoteInspectZoomSlider) remoteInspectZoomSlider.value = Math.round(vals.scale * 100);
+        emitInspectZoomUpdate();
+      },
+      () => {
+        emitInspectZoomUpdate();
+      }
+    );
   }
 
   // ==================== SCREEN WAKELOCK (KEEP AWAKE) ====================

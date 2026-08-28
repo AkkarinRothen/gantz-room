@@ -259,6 +259,54 @@
             </div>
           </div>
 
+          <!-- 9. CINEMATIC FULLSCREEN INSPECTION & OPTICAL ZOOM VIEW -->
+          <div class="view-inspect" id="viewInspect" style="display: none;">
+            <div class="inspect-hud-container">
+              <!-- Animated Scanning Laser Sweep & Grid Overlay -->
+              <div class="inspect-laser-scanline"></div>
+              <div class="inspect-grid-layer"></div>
+
+              <!-- HUD Target Framing Brackets -->
+              <div class="inspect-bracket top-left"></div>
+              <div class="inspect-bracket top-right"></div>
+              <div class="inspect-bracket bottom-left"></div>
+              <div class="inspect-bracket bottom-right"></div>
+
+              <!-- Top Left: Tactical Target Biometrics Card -->
+              <div class="inspect-hud-header">
+                <div class="inspect-hud-tag" id="inspectHudTag">🔬 ANÁLISIS ÓPTICO DE OBJETIVO // GANTZ HUD</div>
+                <div class="inspect-target-name" id="inspectTargetName">OBJETIVO</div>
+                <div class="inspect-target-sub" id="inspectTargetSub">INFORMACIÓN CLASIFICADA</div>
+              </div>
+
+              <!-- Top Right: Live Optical Status & Zoom Level -->
+              <div class="inspect-hud-status">
+                <div class="inspect-live-pill">
+                  <span class="inspect-radar-pulse"></span>
+                  <span id="inspectZoomBadge">ZOOM 1.00x</span>
+                </div>
+                <div class="inspect-lens-info" id="inspectLensInfo">MODO: DETECCIÓN ÓPTICA</div>
+              </div>
+
+              <!-- Center: High-Resolution Scalable Image Viewport -->
+              <div class="inspect-viewport" id="inspectViewport">
+                <div class="inspect-img-frame" id="inspectImgFrame">
+                  <img src="assets/webp/monsters/alien_cebolla_joven_recortado.webp" id="inspectMainImg" class="inspect-main-image" alt="Target In Inspection">
+                  <div class="inspect-reticle-center"></div>
+                </div>
+              </div>
+
+              <!-- Bottom: Target Specs & Analysis Details -->
+              <div class="inspect-hud-footer" id="inspectHudFooter">
+                <div class="inspect-footer-quote" id="inspectFooterQuote">"VUESTRAS VIDAS ME PERTENECEN."</div>
+                <div class="inspect-footer-badges">
+                  <span class="inspect-stat-pill" id="inspectStatPill1">🎯 BLANCO FIJADO</span>
+                  <span class="inspect-stat-pill glow" id="inspectStatPill2">⚡ SEÑAL TRANSMITIDA</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
       </div>
