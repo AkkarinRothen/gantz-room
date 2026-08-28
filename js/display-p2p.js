@@ -663,8 +663,9 @@
         const s = parseFloat(scale || 1.0);
         const px = posX !== undefined ? parseFloat(posX) : 50;
         const py = posY !== undefined ? parseFloat(posY) : 50;
-        const tx = ((px - 50) * 0.8 * Math.max(1, s * 0.9)).toFixed(2);
-        const ty = ((py - 50) * 0.8 * Math.max(1, s * 0.9)).toFixed(2);
+        const maxPan = Math.max(30, (s - 0.7) * 50);
+        const tx = (((50 - px) / 50) * maxPan).toFixed(2);
+        const ty = (((50 - py) / 50) * maxPan).toFixed(2);
 
         if (inspectMainImg) {
           inspectMainImg.src = image || 'assets/webp/monsters/alien_cebolla_joven_recortado.webp';
@@ -689,8 +690,9 @@
         const s = scale !== undefined ? parseFloat(scale) : 1.0;
         const px = posX !== undefined ? parseFloat(posX) : 50;
         const py = posY !== undefined ? parseFloat(posY) : 50;
-        const tx = ((px - 50) * 0.8 * Math.max(1, s * 0.9)).toFixed(2);
-        const ty = ((py - 50) * 0.8 * Math.max(1, s * 0.9)).toFixed(2);
+        const maxPan = Math.max(30, (s - 0.7) * 50);
+        const tx = (((50 - px) / 50) * maxPan).toFixed(2);
+        const ty = (((50 - py) / 50) * maxPan).toFixed(2);
 
         if (inspectMainImg) {
           inspectMainImg.style.transform = `translate(${tx}%, ${ty}%) scale(${s})`;

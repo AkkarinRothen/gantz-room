@@ -2122,14 +2122,16 @@
         const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
         const deltaX = ((midX - startX) / rect.width) * 100;
         const deltaY = ((midY - startY) / rect.height) * 100;
-        newPosX = Math.min(100, Math.max(0, Math.round(initialPosX - deltaX)));
-        newPosY = Math.min(100, Math.max(0, Math.round(initialPosY - deltaY)));
+        const sensitivity = 1.0 / Math.max(0.7, initialScale * 0.75);
+        newPosX = Math.min(100, Math.max(0, Math.round(initialPosX - deltaX * sensitivity)));
+        newPosY = Math.min(100, Math.max(0, Math.round(initialPosY - deltaY * sensitivity)));
       } else if (e.touches.length === 1) {
         // 1 finger = Pan
         const deltaX = ((e.touches[0].clientX - startX) / rect.width) * 100;
         const deltaY = ((e.touches[0].clientY - startY) / rect.height) * 100;
-        newPosX = Math.min(100, Math.max(0, Math.round(initialPosX - deltaX)));
-        newPosY = Math.min(100, Math.max(0, Math.round(initialPosY - deltaY)));
+        const sensitivity = 1.0 / Math.max(0.7, initialScale * 0.75);
+        newPosX = Math.min(100, Math.max(0, Math.round(initialPosX - deltaX * sensitivity)));
+        newPosY = Math.min(100, Math.max(0, Math.round(initialPosY - deltaY * sensitivity)));
       }
 
       setValues({ scale: newScale, posX: newPosX, posY: newPosY });
@@ -2163,8 +2165,9 @@
       const rect = container.getBoundingClientRect();
       const deltaX = ((e.clientX - startX) / rect.width) * 100;
       const deltaY = ((e.clientY - startY) / rect.height) * 100;
-      const newPosX = Math.min(100, Math.max(0, Math.round(initialPosX - deltaX)));
-      const newPosY = Math.min(100, Math.max(0, Math.round(initialPosY - deltaY)));
+      const sensitivity = 1.0 / Math.max(0.7, initialScale * 0.75);
+      const newPosX = Math.min(100, Math.max(0, Math.round(initialPosX - deltaX * sensitivity)));
+      const newPosY = Math.min(100, Math.max(0, Math.round(initialPosY - deltaY * sensitivity)));
       setValues({ scale: initialScale, posX: newPosX, posY: newPosY });
       if (onUpdate) onUpdate();
     });
@@ -2279,8 +2282,9 @@
     const posX = target.posX !== undefined ? parseInt(target.posX, 10) : 50;
     const posY = target.posY !== undefined ? parseInt(target.posY, 10) : 50;
 
-    const tx = ((posX - 50) * 0.8 * Math.max(1, scale * 0.9)).toFixed(2);
-    const ty = ((posY - 50) * 0.8 * Math.max(1, scale * 0.9)).toFixed(2);
+    const maxPan = Math.max(30, (scale - 0.7) * 50);
+    const tx = (((50 - posX) / 50) * maxPan).toFixed(2);
+    const ty = (((50 - posY) / 50) * maxPan).toFixed(2);
 
     if (inspectTouchImg) {
       inspectTouchImg.src = target.image;
@@ -2322,8 +2326,9 @@
     if (remoteInspectPanXVal) remoteInspectPanXVal.textContent = `${posX}%`;
     if (remoteInspectPanYVal) remoteInspectPanYVal.textContent = `${posY}%`;
 
-    const tx = ((posX - 50) * 0.8 * Math.max(1, scale * 0.9)).toFixed(2);
-    const ty = ((posY - 50) * 0.8 * Math.max(1, scale * 0.9)).toFixed(2);
+    const maxPan = Math.max(30, (scale - 0.7) * 50);
+    const tx = (((50 - posX) / 50) * maxPan).toFixed(2);
+    const ty = (((50 - posY) / 50) * maxPan).toFixed(2);
 
     if (inspectTouchImg) {
       inspectTouchImg.style.transform = `translate(${tx}%, ${ty}%) scale(${scale})`;
