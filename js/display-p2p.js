@@ -377,8 +377,8 @@
           const px = parseFloat(posParts[0]) || 50;
           const py = parseFloat(posParts[1]) || 0;
           const s = parseFloat(alien.imageScale) || 1.05;
-          const tx = ((px - 50) * 0.9).toFixed(2);
-          const ty = ((py - 0) * 0.9).toFixed(2);
+          const tx = (-(px - 50) * 0.85).toFixed(2);
+          const ty = (-(py - 0) * 0.85).toFixed(2);
           briefingImg.style.transform = `translate(${tx}%, ${ty}%) scale(${s})`;
           briefingImg.style.transformOrigin = 'center top';
           briefingName.textContent = (alien.name || 'ALIEN').toUpperCase();
@@ -625,8 +625,8 @@
           const px = msg.posX !== undefined ? parseFloat(msg.posX) : 50;
           const py = msg.posY !== undefined ? parseFloat(msg.posY) : 0;
           const s = msg.scale !== undefined ? parseFloat(msg.scale) : 1.05;
-          const tx = ((px - 50) * 0.9).toFixed(2);
-          const ty = ((py - 0) * 0.9).toFixed(2);
+          const tx = (-(px - 50) * 0.85).toFixed(2);
+          const ty = (-(py - 0) * 0.85).toFixed(2);
           briefingImg.style.transform = `translate(${tx}%, ${ty}%) scale(${s})`;
           briefingImg.style.transformOrigin = 'center top';
         }
