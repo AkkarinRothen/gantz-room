@@ -373,8 +373,14 @@
         if (appState.currentAlien) {
           const alien = appState.currentAlien;
           briefingImg.src = alien.image || 'assets/webp/monsters/alien_cebolla_joven_recortado.webp';
-          briefingImg.style.objectPosition = alien.imagePosition || 'center top';
-          briefingImg.style.transform = `scale(${alien.imageScale || 1.05})`;
+          const posParts = (alien.imagePosition || '50% 0%').split(' ');
+          const px = parseFloat(posParts[0]) || 50;
+          const py = parseFloat(posParts[1]) || 0;
+          const s = parseFloat(alien.imageScale) || 1.05;
+          const tx = ((px - 50) * 0.9).toFixed(2);
+          const ty = ((py - 0) * 0.9).toFixed(2);
+          briefingImg.style.transform = `translate(${tx}%, ${ty}%) scale(${s})`;
+          briefingImg.style.transformOrigin = 'center top';
           briefingName.textContent = (alien.name || 'ALIEN').toUpperCase();
 
           const chars = (alien.characteristics || alien.traits || 'FUERTE').split('\n').map(c => c.trim()).filter(Boolean).join('<br>');
@@ -616,12 +622,13 @@
 
       case 'LIVE_ALIEN_FRAMING': {
         if (briefingImg && appState.mode === 'briefing') {
-          if (msg.posX !== undefined && msg.posY !== undefined) {
-            briefingImg.style.objectPosition = `${msg.posX}% ${msg.posY}%`;
-          }
-          if (msg.scale !== undefined) {
-            briefingImg.style.transform = `scale(${msg.scale})`;
-          }
+          const px = msg.posX !== undefined ? parseFloat(msg.posX) : 50;
+          const py = msg.posY !== undefined ? parseFloat(msg.posY) : 0;
+          const s = msg.scale !== undefined ? parseFloat(msg.scale) : 1.05;
+          const tx = ((px - 50) * 0.9).toFixed(2);
+          const ty = ((py - 0) * 0.9).toFixed(2);
+          briefingImg.style.transform = `translate(${tx}%, ${ty}%) scale(${s})`;
+          briefingImg.style.transformOrigin = 'center top';
         }
         break;
       }
@@ -653,10 +660,15 @@
 
       case 'INSPECT_MEDIA': {
         const { image, title, subtitle, quote, stat1, stat2, tag, scale, posX, posY } = msg;
+        const s = parseFloat(scale || 1.0);
+        const px = posX !== undefined ? parseFloat(posX) : 50;
+        const py = posY !== undefined ? parseFloat(posY) : 50;
+        const tx = ((px - 50) * 0.8 * Math.max(1, s * 0.9)).toFixed(2);
+        const ty = ((py - 50) * 0.8 * Math.max(1, s * 0.9)).toFixed(2);
+
         if (inspectMainImg) {
           inspectMainImg.src = image || 'assets/webp/monsters/alien_cebolla_joven_recortado.webp';
-          inspectMainImg.style.transform = `scale(${scale || 1.0})`;
-          inspectMainImg.style.objectPosition = `${posX !== undefined ? posX : 50}% ${posY !== undefined ? posY : 50}%`;
+          inspectMainImg.style.transform = `translate(${tx}%, ${ty}%) scale(${s})`;
         }
         if (inspectTargetName) inspectTargetName.textContent = (title || 'OBJETIVO').toUpperCase();
         if (inspectTargetSub) inspectTargetSub.textContent = (subtitle || 'ANÁLISIS BIOMÉTRICO').toUpperCase();
@@ -664,8 +676,8 @@
         if (inspectFooterQuote) inspectFooterQuote.textContent = quote ? `"${quote}"` : '"VUESTRAS VIDAS ME PERTENECEN."';
         if (inspectStatPill1) inspectStatPill1.textContent = stat1 || '🎯 BLANCO FIJADO';
         if (inspectStatPill2) inspectStatPill2.textContent = stat2 || '⚡ ANÁLISIS ÓPTICO EN VIVO';
-        if (inspectZoomBadge) inspectZoomBadge.textContent = `ZOOM ${parseFloat(scale || 1.0).toFixed(2)}x`;
-        if (inspectLensInfo) inspectLensInfo.textContent = `POSICIÓN: ${posX || 50}% X / ${posY || 50}% Y`;
+        if (inspectZoomBadge) inspectZoomBadge.textContent = `ZOOM ${s.toFixed(2)}x`;
+        if (inspectLensInfo) inspectLensInfo.textContent = `POSICIÓN: ${Math.round(px)}% X / ${Math.round(py)}% Y`;
 
         appState.inspectData = msg;
         setMode('inspect');
@@ -674,17 +686,20 @@
 
       case 'INSPECT_ZOOM_UPDATE': {
         const { scale, posX, posY } = msg;
+        const s = scale !== undefined ? parseFloat(scale) : 1.0;
+        const px = posX !== undefined ? parseFloat(posX) : 50;
+        const py = posY !== undefined ? parseFloat(posY) : 50;
+        const tx = ((px - 50) * 0.8 * Math.max(1, s * 0.9)).toFixed(2);
+        const ty = ((py - 50) * 0.8 * Math.max(1, s * 0.9)).toFixed(2);
+
         if (inspectMainImg) {
-          if (scale !== undefined) inspectMainImg.style.transform = `scale(${scale})`;
-          if (posX !== undefined && posY !== undefined) {
-            inspectMainImg.style.objectPosition = `${posX}% ${posY}%`;
-          }
+          inspectMainImg.style.transform = `translate(${tx}%, ${ty}%) scale(${s})`;
         }
         if (inspectZoomBadge && scale !== undefined) {
-          inspectZoomBadge.textContent = `ZOOM ${parseFloat(scale).toFixed(2)}x`;
+          inspectZoomBadge.textContent = `ZOOM ${s.toFixed(2)}x`;
         }
-        if (inspectLensInfo && posX !== undefined && posY !== undefined) {
-          inspectLensInfo.textContent = `POSICIÓN: ${posX}% X / ${posY}% Y`;
+        if (inspectLensInfo) {
+          inspectLensInfo.textContent = `POSICIÓN: ${Math.round(px)}% X / ${Math.round(py)}% Y`;
         }
         break;
       }

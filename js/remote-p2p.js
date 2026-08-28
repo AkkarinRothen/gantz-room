@@ -2274,18 +2274,25 @@
     if (inspectModalName) inspectModalName.textContent = (target.title || 'OBJETIVO').toUpperCase();
     if (inspectModalSub) inspectModalSub.textContent = target.subtitle || 'EN ANÁLISIS';
     if (inspectModalThumb) inspectModalThumb.src = target.image;
+
+    const scale = parseFloat(target.scale || 1.0);
+    const posX = target.posX !== undefined ? parseInt(target.posX, 10) : 50;
+    const posY = target.posY !== undefined ? parseInt(target.posY, 10) : 50;
+
+    const tx = ((posX - 50) * 0.8 * Math.max(1, scale * 0.9)).toFixed(2);
+    const ty = ((posY - 50) * 0.8 * Math.max(1, scale * 0.9)).toFixed(2);
+
     if (inspectTouchImg) {
       inspectTouchImg.src = target.image;
-      inspectTouchImg.style.transform = 'scale(1)';
-      inspectTouchImg.style.objectPosition = '50% 50%';
+      inspectTouchImg.style.transform = `translate(${tx}%, ${ty}%) scale(${scale})`;
     }
 
-    if (remoteInspectZoomSlider) remoteInspectZoomSlider.value = 100;
-    if (inspectZoomValLabel) inspectZoomValLabel.textContent = '1.00x';
-    if (remoteInspectPanX) remoteInspectPanX.value = 50;
-    if (remoteInspectPanY) remoteInspectPanY.value = 50;
-    if (remoteInspectPanXVal) remoteInspectPanXVal.textContent = '50%';
-    if (remoteInspectPanYVal) remoteInspectPanYVal.textContent = '50%';
+    if (remoteInspectZoomSlider) remoteInspectZoomSlider.value = Math.round(scale * 100);
+    if (inspectZoomValLabel) inspectZoomValLabel.textContent = `${scale.toFixed(2)}x`;
+    if (remoteInspectPanX) remoteInspectPanX.value = posX;
+    if (remoteInspectPanY) remoteInspectPanY.value = posY;
+    if (remoteInspectPanXVal) remoteInspectPanXVal.textContent = `${posX}%`;
+    if (remoteInspectPanYVal) remoteInspectPanYVal.textContent = `${posY}%`;
 
     if (inspectControlModal) inspectControlModal.style.display = 'flex';
 
@@ -2299,25 +2306,27 @@
       stat1: target.stat1,
       stat2: target.stat2,
       tag: target.tag,
-      scale: target.scale,
-      posX: target.posX,
-      posY: target.posY
+      scale: scale,
+      posX: posX,
+      posY: posY
     });
   }
 
   function emitInspectZoomUpdate() {
     if (!activeInspectTarget) return;
-    const scale = (parseFloat(remoteInspectZoomSlider.value) / 100).toFixed(2);
+    const scale = parseFloat((parseFloat(remoteInspectZoomSlider.value) / 100).toFixed(2));
     const posX = parseInt(remoteInspectPanX.value, 10);
     const posY = parseInt(remoteInspectPanY.value, 10);
 
-    if (inspectZoomValLabel) inspectZoomValLabel.textContent = `${scale}x`;
+    if (inspectZoomValLabel) inspectZoomValLabel.textContent = `${scale.toFixed(2)}x`;
     if (remoteInspectPanXVal) remoteInspectPanXVal.textContent = `${posX}%`;
     if (remoteInspectPanYVal) remoteInspectPanYVal.textContent = `${posY}%`;
 
+    const tx = ((posX - 50) * 0.8 * Math.max(1, scale * 0.9)).toFixed(2);
+    const ty = ((posY - 50) * 0.8 * Math.max(1, scale * 0.9)).toFixed(2);
+
     if (inspectTouchImg) {
-      inspectTouchImg.style.transform = `scale(${scale})`;
-      inspectTouchImg.style.objectPosition = `${posX}% ${posY}%`;
+      inspectTouchImg.style.transform = `translate(${tx}%, ${ty}%) scale(${scale})`;
     }
 
     activeInspectTarget.scale = scale;
@@ -2333,7 +2342,7 @@
         posX: posX,
         posY: posY
       });
-    }, 20);
+    }, 16);
   }
 
   window.setRemoteInspectZoom = function(val) {
