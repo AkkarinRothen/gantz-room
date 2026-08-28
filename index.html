@@ -87,8 +87,9 @@
             <div class="mission-mini-radar" id="miniRadar">
               <div class="radar-sweep"></div>
               <div class="radar-crosshair"></div>
-              <div class="radar-blip blip-target" title="Objetivo Alien"></div>
-              <div class="radar-blip blip-hunter" style="top: 35%; left: 45%;" title="Cazadores"></div>
+              <div class="radar-blip blip-target" id="miniBlipTarget" style="top: 35%; left: 65%;" title="Objetivo Alien"></div>
+              <div class="radar-blip blip-hunter" id="miniBlipHunter" style="top: 50%; left: 50%;" title="Cazadores"></div>
+              <div id="miniBlipsMinions"></div>
               <div class="radar-ring r-1"></div>
               <div class="radar-ring r-2"></div>
             </div>
@@ -238,20 +239,25 @@
             <div class="tactical-radar-card">
               <div class="radar-header-row">
                 <div class="radar-title">🛰️ RADAR TÁCTICO DE GANTZ // RASTREO DE ÁREA</div>
-                <div class="radar-status-badge">🟢 HUD ACTIVO</div>
+                <div class="radar-status-badge" id="radarStatusBadge">🟢 HUD ACTIVO</div>
               </div>
-              <div class="tactical-radar-screen">
-                <div class="tactical-sweep"></div>
+              <div class="tactical-radar-screen" id="tacticalRadarScreen">
+                <div class="tactical-sweep" id="tacticalRadarSweep"></div>
                 <div class="tactical-grid-overlay"></div>
-                <div class="tactical-ring ring-1"></div>
-                <div class="tactical-ring ring-2"></div>
-                <div class="tactical-ring ring-3"></div>
-                <div class="tactical-blip alien-boss" style="top: 38%; left: 60%;">
+                <div class="tactical-ring ring-1" title="1.000 Metros (Límite Perímetro)"></div>
+                <div class="tactical-ring ring-2" title="500 Metros (Zona Media)"></div>
+                <div class="tactical-ring ring-3" title="100 Metros (Peligro)"></div>
+                <div class="tactical-blip alien-boss" id="tacticalBlipTarget" style="top: 35%; left: 65%;">
                   <span class="blip-label" id="radarTargetLabel">OBJETIVO: ALIEN</span>
                 </div>
-                <div class="tactical-blip hunter-team" style="top: 62%; left: 38%;">
-                  <span class="blip-label">CAZADORES</span>
+                <div class="tactical-blip hunter-team" id="tacticalBlipHunter" style="top: 50%; left: 50%;">
+                  <span class="blip-label" id="radarHunterLabel">CAZADORES (PUNTO 0)</span>
                 </div>
+                <div id="tacticalMinionsContainer"></div>
+              </div>
+              <div class="radar-metrics-row" style="display: flex; gap: 12px; justify-content: center; align-items: center; margin: 6px 0; font-size: 0.8rem; font-family: var(--font-display);">
+                <div style="color: var(--gantz-gold);">DISTANCIA: <span id="radarMetricMeters" style="color: #fff; font-family: monospace; font-size: 0.95rem; font-weight: bold;">120m</span></div>
+                <div style="color: #94a3b8;">AMENAZA: <span id="radarMetricThreat" style="color: #ff003c; font-weight: bold; padding: 1px 6px; border-radius: 3px; background: rgba(255,0,60,0.2); border: 1px solid #ff003c;">INMINENTE</span></div>
               </div>
               <div class="radar-footer-row">
                 <span id="radarPerimeterWarning">⚠️ ADVERTENCIA: SALIR DEL PERÍMETRO (1 KM) ACTIVARÁ LA BOMBA CRANEAL</span>

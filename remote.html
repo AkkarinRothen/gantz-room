@@ -270,6 +270,7 @@
           <button class="btn btn-primary" onclick="setSphereMode('briefing')">🎯 Briefing</button>
           <button class="btn btn-danger" onclick="setSphereMode('mission')">⏱️ Misión / Timer</button>
           <button class="btn btn-cyan" onclick="setSphereMode('radar')">🛰️ Radar Táctico</button>
+          <button class="btn btn-gold" onclick="openRadarTouchpad()">📡 Controlar Radar</button>
           <button class="btn btn-gold" onclick="setSphereMode('scoring')">🏆 Puntuaciones</button>
           <button class="btn" onclick="setSphereMode('broadcast')">💬 Mensaje</button>
           <button class="btn btn-gold" id="btnRemoteCrtToggle" onclick="toggleRemoteCrt()">📺 Filtro CRT</button>
@@ -772,10 +773,92 @@
     </div>
   </div>
 
+  <!-- Floating Tactical Radar Controller Button -->
+  <button id="btnFloatingRadar" class="floating-radar-btn" onclick="openRadarTouchpad()" title="Abrir Radar Táctico de Gantz">
+    <span>📡</span> RADAR
+  </button>
+
   <!-- Floating Laser Pointer Button -->
   <button id="btnFloatingLaser" class="floating-laser-btn" onclick="openLaserTouchpad()" title="Abrir Puntero Láser Holográfico">
     <span>🎯</span> LÁSER
   </button>
+
+  <!-- ==================== MODAL: INTERACTIVE TACTICAL RADAR CONTROLLER ==================== -->
+  <div class="modal-overlay" id="radarControlModal" style="display: none; z-index: 10008;">
+    <div class="modal-content" style="max-width: 460px; max-height: 94vh; overflow-y: auto; text-align: center; border-color: var(--gantz-cyan); box-shadow: 0 0 35px rgba(0,240,255,0.35);">
+      <div class="card-header" style="border-bottom: 1px solid rgba(0,240,255,0.3); padding-bottom: 8px;">
+        <div class="card-title" style="color: var(--gantz-cyan); display: flex; align-items: center; gap: 8px;">
+          <span>📡</span> <span>RADAR TÁCTICO // GANTZ HUD</span>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="closeRadarTouchpad()">✕ CERRAR</button>
+      </div>
+
+      <!-- Target Readout & Threat Level Badge -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.6); border: 1px solid rgba(0,240,255,0.25); border-radius: 6px; padding: 8px 12px; margin: 10px 0 8px 0;">
+        <div style="text-align: left;">
+          <div style="font-size: 0.7rem; color: #94a3b8;">DISTANCIA AL BLANCO:</div>
+          <div id="remoteRadarMetersLabel" style="font-family: monospace; font-size: 1.15rem; font-weight: bold; color: var(--gantz-gold);">120 m</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.7rem; color: #94a3b8;">NIVEL DE AMENAZA:</div>
+          <div id="remoteRadarThreatBadge" style="font-size: 0.75rem; font-weight: bold; color: #ff003c; background: rgba(255,0,60,0.2); border: 1px solid #ff003c; padding: 2px 8px; border-radius: 4px;">INMINENTE</div>
+        </div>
+      </div>
+
+      <!-- Interactive Circular Radar Touchpad -->
+      <div id="remoteRadarTouchpad" class="remote-radar-touchpad">
+        <div class="radar-sweep"></div>
+        <div class="radar-crosshair"></div>
+        <div class="radar-ring r-1"></div>
+        <div class="radar-ring r-2"></div>
+        <!-- Center (Hunters 0,0) -->
+        <div class="radar-blip blip-hunter" style="top: 50%; left: 50%; width: 8px; height: 8px;" title="Cazadores (Centro)"></div>
+        <!-- Target Alien Blip (Draggable/Movable) -->
+        <div id="remoteRadarTargetBlip" class="radar-blip blip-target" style="top: 35%; left: 65%; width: 12px; height: 12px; box-shadow: 0 0 12px #ff003c;" title="Arrastra para mover objetivo"></div>
+        <div id="remoteRadarMinionsContainer"></div>
+        <div class="radar-touchpad-hint">🖐️ TOCA O ARRASTRA PARA POSICIONAR ALIEN</div>
+      </div>
+
+      <!-- Quick Distance & Approach Presets -->
+      <div style="margin: 8px 0 10px 0;">
+        <div style="font-size: 0.72rem; color: #94a3b8; text-align: left; margin-bottom: 4px; font-weight: bold;">
+          🎯 APROXIMACIÓN RÁPIDA / DISTANCIA:
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;">
+          <button type="button" class="btn btn-sm" onclick="setRadarDistancePreset(500)" style="font-size: 0.72rem; padding: 6px 2px;">500m (Lejos)</button>
+          <button type="button" class="btn btn-sm" onclick="setRadarDistancePreset(150)" style="font-size: 0.72rem; padding: 6px 2px;">150m (Medio)</button>
+          <button type="button" class="btn btn-sm btn-gold" onclick="setRadarDistancePreset(50)" style="font-size: 0.72rem; padding: 6px 2px;">50m (Peligro)</button>
+          <button type="button" class="btn btn-sm btn-danger" onclick="setRadarDistancePreset(15)" style="font-size: 0.72rem; padding: 6px 2px;">15m (Contacto)</button>
+        </div>
+      </div>
+
+      <!-- Tactical Radar Action Buttons -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;">
+        <button type="button" class="btn btn-cyan btn-sm" onclick="triggerRadarPingFromRemote()" style="font-weight: bold;">
+          📡 PING DE ESCANEO
+        </button>
+        <button type="button" class="btn btn-sm" id="btnToggleRadarStealth" onclick="toggleRadarStealth()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.3);">
+          👻 CAMUFLAJE / SIGILO
+        </button>
+        <button type="button" class="btn btn-sm" id="btnToggleRadarMinions" onclick="toggleRadarMinions()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.3);">
+          👥 MANADA (+3 BLIPS)
+        </button>
+        <button type="button" class="btn btn-sm btn-danger" id="btnTogglePerimeterAlert" onclick="togglePerimeterAlert()">
+          ⚠️ ALERTA 1 KM
+        </button>
+      </div>
+
+      <!-- Screen Mode Shortcuts -->
+      <div style="display: flex; gap: 6px; border-top: 1px solid rgba(0,240,255,0.2); padding-top: 8px;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="setSphereMode('radar'); closeRadarTouchpad();" style="flex: 1; font-size: 0.75rem;">
+          📺 VER RADAR COMPLETO
+        </button>
+        <button type="button" class="btn btn-cyan btn-sm" onclick="setSphereMode('mission'); closeRadarTouchpad();" style="flex: 1; font-size: 0.75rem;">
+          ⏱️ VER HUD DE MISIÓN
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- ==================== MODAL: HOLOGRAPHIC LASER TOUCHPAD ==================== -->
   <div class="modal-overlay" id="laserTouchpadModal" style="display: none; z-index: 10008;">

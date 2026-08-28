@@ -108,6 +108,22 @@
   const inspectStatPill1 = document.getElementById('inspectStatPill1');
   const inspectStatPill2 = document.getElementById('inspectStatPill2');
 
+  // Tactical Radar Mode Elements
+  const viewRadar = document.getElementById('viewRadar');
+  const miniRadar = document.getElementById('miniRadar');
+  const miniBlipTarget = document.getElementById('miniBlipTarget');
+  const miniBlipHunter = document.getElementById('miniBlipHunter');
+  const miniBlipsMinions = document.getElementById('miniBlipsMinions');
+  const tacticalBlipTarget = document.getElementById('tacticalBlipTarget');
+  const tacticalBlipHunter = document.getElementById('tacticalBlipHunter');
+  const tacticalMinionsContainer = document.getElementById('tacticalMinionsContainer');
+  const radarTargetLabel = document.getElementById('radarTargetLabel');
+  const radarHunterLabel = document.getElementById('radarHunterLabel');
+  const radarMetricMeters = document.getElementById('radarMetricMeters');
+  const radarMetricThreat = document.getElementById('radarMetricThreat');
+  const radarStatusBadge = document.getElementById('radarStatusBadge');
+  const radarPerimeterWarning = document.getElementById('radarPerimeterWarning');
+
   const qrModal = document.getElementById('qrModal');
   const qrPinDisplay = document.getElementById('qrPinDisplay');
   const qrContainer = document.getElementById('qrContainer');
@@ -856,6 +872,153 @@
           }
         }
         break;
+
+      case 'RADAR_UPDATE':
+        updateRadarDisplay(msg);
+        if (msg.ping && window.GantzAudio) {
+          window.GantzAudio.playRadarPing();
+        }
+        if (msg.threatAlert && window.GantzAudio) {
+          window.GantzAudio.playRadarThresholdAlert();
+        }
+        break;
+
+      case 'RADAR_PING':
+        if (window.GantzAudio) window.GantzAudio.playRadarPing();
+        triggerRadarPingVisual();
+        break;
+
+      case 'RADAR_STEALTH':
+        if (window.GantzAudio) window.GantzAudio.playRadarSignalLost();
+        if (msg.isStealth) {
+          if (miniBlipTarget) miniBlipTarget.style.display = 'none';
+          if (tacticalBlipTarget) tacticalBlipTarget.style.display = 'none';
+          if (radarStatusBadge) {
+            radarStatusBadge.textContent = '⚠️ SEÑAL PERDIDA';
+            radarStatusBadge.style.borderColor = '#ff003c';
+            radarStatusBadge.style.color = '#ff003c';
+            radarStatusBadge.style.background = 'rgba(255,0,60,0.2)';
+          }
+        } else {
+          if (miniBlipTarget) miniBlipTarget.style.display = 'block';
+          if (tacticalBlipTarget) tacticalBlipTarget.style.display = 'flex';
+          if (radarStatusBadge) {
+            radarStatusBadge.textContent = '🟢 HUD ACTIVO';
+            radarStatusBadge.style.borderColor = '#00ff66';
+            radarStatusBadge.style.color = '#00ff66';
+            radarStatusBadge.style.background = 'rgba(0,255,102,0.15)';
+          }
+        }
+        break;
+    }
+  }
+
+  function updateRadarDisplay(data) {
+    if (!data) return;
+    const { target, hunters, minions, isStealth, perimeterAlert } = data;
+
+    if (target) {
+      const tx = Math.min(96, Math.max(4, target.x !== undefined ? target.x : 65));
+      const ty = Math.min(96, Math.max(4, target.y !== undefined ? target.y : 35));
+      const meters = target.distanceMeters !== undefined ? target.distanceMeters : 120;
+      const label = target.label || (appState.currentAlien ? appState.currentAlien.name : 'ALIEN');
+
+      if (miniBlipTarget) {
+        miniBlipTarget.style.left = `${tx}%`;
+        miniBlipTarget.style.top = `${ty}%`;
+        miniBlipTarget.style.display = isStealth ? 'none' : 'block';
+      }
+
+      if (tacticalBlipTarget) {
+        tacticalBlipTarget.style.left = `${tx}%`;
+        tacticalBlipTarget.style.top = `${ty}%`;
+        tacticalBlipTarget.style.display = isStealth ? 'none' : 'flex';
+      }
+
+      if (radarTargetLabel) {
+        radarTargetLabel.textContent = `${label.toUpperCase()} (${meters}m)`;
+      }
+
+      if (radarMetricMeters) {
+        radarMetricMeters.textContent = `${meters}m`;
+      }
+
+      if (radarMetricThreat) {
+        if (meters <= 20) {
+          radarMetricThreat.textContent = 'EXTREMA // CONTACTO';
+          radarMetricThreat.style.color = '#ff003c';
+          radarMetricThreat.style.borderColor = '#ff003c';
+          radarMetricThreat.style.background = 'rgba(255,0,60,0.3)';
+        } else if (meters <= 60) {
+          radarMetricThreat.textContent = 'ALTA // CERCA';
+          radarMetricThreat.style.color = '#ff5500';
+          radarMetricThreat.style.borderColor = '#ff5500';
+          radarMetricThreat.style.background = 'rgba(255,85,0,0.25)';
+        } else if (meters <= 200) {
+          radarMetricThreat.textContent = 'MEDIA // EN RANGO';
+          radarMetricThreat.style.color = 'var(--gantz-gold)';
+          radarMetricThreat.style.borderColor = 'var(--gantz-gold)';
+          radarMetricThreat.style.background = 'rgba(255,215,0,0.2)';
+        } else {
+          radarMetricThreat.textContent = 'LEJANA // RASTREO';
+          radarMetricThreat.style.color = 'var(--gantz-cyan)';
+          radarMetricThreat.style.borderColor = 'var(--gantz-cyan)';
+          radarMetricThreat.style.background = 'rgba(0,240,255,0.15)';
+        }
+      }
+    }
+
+    if (hunters && hunters.x !== undefined && hunters.y !== undefined) {
+      if (miniBlipHunter) {
+        miniBlipHunter.style.left = `${hunters.x}%`;
+        miniBlipHunter.style.top = `${hunters.y}%`;
+      }
+      if (tacticalBlipHunter) {
+        tacticalBlipHunter.style.left = `${hunters.x}%`;
+        tacticalBlipHunter.style.top = `${hunters.y}%`;
+      }
+    }
+
+    if (Array.isArray(minions)) {
+      if (miniBlipsMinions) {
+        miniBlipsMinions.innerHTML = minions.map(m => `
+          <div class="radar-blip blip-target" style="left: ${m.x}%; top: ${m.y}%; width: 4px; height: 4px; opacity: 0.85;"></div>
+        `).join('');
+      }
+      if (tacticalMinionsContainer) {
+        tacticalMinionsContainer.innerHTML = minions.map(m => `
+          <div class="tactical-blip alien-minion" style="left: ${m.x}%; top: ${m.y}%;">
+            <span class="blip-label" style="font-size: 0.55rem; padding: 0 3px;">MINION</span>
+          </div>
+        `).join('');
+      }
+    } else {
+      if (miniBlipsMinions) miniBlipsMinions.innerHTML = '';
+      if (tacticalMinionsContainer) tacticalMinionsContainer.innerHTML = '';
+    }
+
+    if (perimeterAlert !== undefined && radarPerimeterWarning) {
+      if (perimeterAlert) {
+        radarPerimeterWarning.textContent = '🚨 ¡PELIGRO! OBJETIVO AL BORDE DEL PERÍMETRO (1 KM)';
+        radarPerimeterWarning.style.color = '#ff003c';
+        radarPerimeterWarning.style.animation = 'pulse 0.8s infinite';
+      } else {
+        radarPerimeterWarning.textContent = '⚠️ ADVERTENCIA: SALIR DEL PERÍMETRO (1 KM) ACTIVARÁ LA BOMBA CRANEAL';
+        radarPerimeterWarning.style.color = '#94a3b8';
+        radarPerimeterWarning.style.animation = 'none';
+      }
+    }
+  }
+
+  function triggerRadarPingVisual() {
+    const sweep = document.getElementById('tacticalRadarSweep');
+    if (sweep) {
+      sweep.style.animation = 'none';
+      sweep.offsetHeight; // trigger reflow
+      sweep.style.animation = 'radarSweepAnim 1.2s ease-out';
+      setTimeout(() => {
+        sweep.style.animation = 'radarSweepAnim 3s linear infinite';
+      }, 1200);
     }
   }
 

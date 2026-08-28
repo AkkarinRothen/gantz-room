@@ -1989,6 +1989,271 @@
     });
   }
 
+  // ==================== TACTICAL RADAR CONTROLLER ENGINE ====================
+  const radarState = {
+    target: {
+      x: 65,
+      y: 35,
+      distanceMeters: 120,
+      label: 'ALIEN'
+    },
+    hunters: {
+      x: 50,
+      y: 50
+    },
+    minions: null,
+    isStealth: false,
+    perimeterAlert: false
+  };
+
+  function calculateDistanceMeters(x, y) {
+    const dx = x - 50;
+    const dy = y - 50;
+    const distNormalized = Math.hypot(dx, dy) / 50;
+    const meters = Math.max(5, Math.round(distNormalized * 1000));
+    return meters;
+  }
+
+  function updateRemoteRadarUI() {
+    const { target, isStealth, minions, perimeterAlert } = radarState;
+    const remoteRadarTargetBlip = document.getElementById('remoteRadarTargetBlip');
+    const remoteRadarMetersLabel = document.getElementById('remoteRadarMetersLabel');
+    const remoteRadarThreatBadge = document.getElementById('remoteRadarThreatBadge');
+    const btnToggleRadarStealth = document.getElementById('btnToggleRadarStealth');
+    const btnToggleRadarMinions = document.getElementById('btnToggleRadarMinions');
+    const btnTogglePerimeterAlert = document.getElementById('btnTogglePerimeterAlert');
+    const remoteRadarMinionsContainer = document.getElementById('remoteRadarMinionsContainer');
+
+    if (remoteRadarTargetBlip) {
+      remoteRadarTargetBlip.style.left = `${target.x}%`;
+      remoteRadarTargetBlip.style.top = `${target.y}%`;
+      remoteRadarTargetBlip.style.display = isStealth ? 'none' : 'block';
+    }
+
+    if (remoteRadarMetersLabel) {
+      remoteRadarMetersLabel.textContent = `${target.distanceMeters} m`;
+    }
+
+    if (remoteRadarThreatBadge) {
+      const m = target.distanceMeters;
+      if (m <= 20) {
+        remoteRadarThreatBadge.textContent = 'EXTREMA // CONTACTO';
+        remoteRadarThreatBadge.style.color = '#ff003c';
+        remoteRadarThreatBadge.style.borderColor = '#ff003c';
+        remoteRadarThreatBadge.style.background = 'rgba(255,0,60,0.25)';
+      } else if (m <= 60) {
+        remoteRadarThreatBadge.textContent = 'ALTA // CERCA';
+        remoteRadarThreatBadge.style.color = '#ff5500';
+        remoteRadarThreatBadge.style.borderColor = '#ff5500';
+        remoteRadarThreatBadge.style.background = 'rgba(255,85,0,0.2)';
+      } else if (m <= 200) {
+        remoteRadarThreatBadge.textContent = 'MEDIA // EN RANGO';
+        remoteRadarThreatBadge.style.color = 'var(--gantz-gold)';
+        remoteRadarThreatBadge.style.borderColor = 'var(--gantz-gold)';
+        remoteRadarThreatBadge.style.background = 'rgba(255,215,0,0.15)';
+      } else {
+        remoteRadarThreatBadge.textContent = 'LEJANA // RASTREO';
+        remoteRadarThreatBadge.style.color = 'var(--gantz-cyan)';
+        remoteRadarThreatBadge.style.borderColor = 'var(--gantz-cyan)';
+        remoteRadarThreatBadge.style.background = 'rgba(0,240,255,0.15)';
+      }
+    }
+
+    if (btnToggleRadarStealth) {
+      btnToggleRadarStealth.style.background = isStealth ? 'rgba(255,0,60,0.3)' : 'rgba(255,255,255,0.08)';
+      btnToggleRadarStealth.style.borderColor = isStealth ? '#ff003c' : 'rgba(255,255,255,0.3)';
+      btnToggleRadarStealth.style.color = isStealth ? '#ff003c' : '#fff';
+      btnToggleRadarStealth.textContent = isStealth ? '👻 SIGILO ACTIVO' : '👻 CAMUFLAJE / SIGILO';
+    }
+
+    if (btnToggleRadarMinions) {
+      const hasMinions = Array.isArray(minions);
+      btnToggleRadarMinions.style.background = hasMinions ? 'rgba(0,240,255,0.25)' : 'rgba(255,255,255,0.08)';
+      btnToggleRadarMinions.style.borderColor = hasMinions ? 'var(--gantz-cyan)' : 'rgba(255,255,255,0.3)';
+      btnToggleRadarMinions.style.color = hasMinions ? 'var(--gantz-cyan)' : '#fff';
+    }
+
+    if (btnTogglePerimeterAlert) {
+      btnTogglePerimeterAlert.style.background = perimeterAlert ? 'rgba(255,0,60,0.4)' : 'rgba(255,0,60,0.15)';
+      btnTogglePerimeterAlert.style.borderColor = perimeterAlert ? '#ff003c' : 'rgba(255,0,60,0.4)';
+    }
+
+    if (remoteRadarMinionsContainer) {
+      if (Array.isArray(minions)) {
+        remoteRadarMinionsContainer.innerHTML = minions.map(m => `
+          <div class="radar-blip blip-target" style="left: ${m.x}%; top: ${m.y}%; width: 6px; height: 6px; opacity: 0.85;"></div>
+        `).join('');
+      } else {
+        remoteRadarMinionsContainer.innerHTML = '';
+      }
+    }
+  }
+
+  let radarThrottleTimer = null;
+  function broadcastRadarUpdate(threatAlert = false, ping = false) {
+    updateRemoteRadarUI();
+    if (radarThrottleTimer) clearTimeout(radarThrottleTimer);
+    radarThrottleTimer = setTimeout(() => {
+      sendDisplay({
+        type: 'RADAR_UPDATE',
+        target: radarState.target,
+        hunters: radarState.hunters,
+        minions: radarState.minions,
+        isStealth: radarState.isStealth,
+        perimeterAlert: radarState.perimeterAlert,
+        threatAlert: threatAlert,
+        ping: ping
+      });
+    }, 16);
+  }
+
+  function initRadarTouchpad() {
+    const pad = document.getElementById('remoteRadarTouchpad');
+    if (!pad) return;
+
+    let isTouching = false;
+    let lastThresholdMeters = radarState.target.distanceMeters;
+
+    function handlePos(clientX, clientY) {
+      const rect = pad.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const radius = rect.width / 2;
+
+      let dx = clientX - centerX;
+      let dy = clientY - centerY;
+      const dist = Math.hypot(dx, dy);
+
+      const maxR = radius * 0.92;
+      if (dist > maxR) {
+        dx = (dx / dist) * maxR;
+        dy = (dy / dist) * maxR;
+      }
+
+      const x = Math.round(50 + (dx / radius) * 50);
+      const y = Math.round(50 + (dy / radius) * 50);
+      const meters = calculateDistanceMeters(x, y);
+
+      radarState.target.x = x;
+      radarState.target.y = y;
+      radarState.target.distanceMeters = meters;
+      radarState.target.label = appState?.currentAlien?.name || 'ALIEN';
+
+      let crossedThreat = false;
+      if ((lastThresholdMeters > 50 && meters <= 50) || (lastThresholdMeters > 20 && meters <= 20)) {
+        vibrate(40);
+        crossedThreat = true;
+      }
+      lastThresholdMeters = meters;
+
+      broadcastRadarUpdate(crossedThreat);
+    }
+
+    pad.addEventListener('touchstart', (e) => {
+      isTouching = true;
+      if (e.touches.length > 0) {
+        handlePos(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    pad.addEventListener('touchmove', (e) => {
+      if (!isTouching) return;
+      if (e.touches.length > 0) {
+        handlePos(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    pad.addEventListener('touchend', () => { isTouching = false; });
+    pad.addEventListener('touchcancel', () => { isTouching = false; });
+
+    let isMouseDown = false;
+    pad.addEventListener('mousedown', (e) => {
+      isMouseDown = true;
+      handlePos(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isMouseDown) return;
+      handlePos(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('mouseup', () => { isMouseDown = false; });
+  }
+
+  window.openRadarTouchpad = function() {
+    vibrate(30);
+    const modal = document.getElementById('radarControlModal');
+    if (modal) modal.style.display = 'flex';
+    if (appState?.currentAlien) {
+      radarState.target.label = appState.currentAlien.name;
+    }
+    updateRemoteRadarUI();
+  };
+
+  window.closeRadarTouchpad = function() {
+    vibrate(20);
+    const modal = document.getElementById('radarControlModal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.setRadarDistancePreset = function(meters) {
+    vibrate(30);
+    const dx = radarState.target.x - 50;
+    const dy = radarState.target.y - 50;
+    let angle = Math.atan2(dy, dx);
+    if (dx === 0 && dy === 0) angle = -Math.PI / 3;
+
+    const distNormalized = Math.min(0.92, meters / 1000);
+    radarState.target.x = Math.round(50 + Math.cos(angle) * distNormalized * 50);
+    radarState.target.y = Math.round(50 + Math.sin(angle) * distNormalized * 50);
+    radarState.target.distanceMeters = meters;
+
+    const isThreatAlert = meters <= 50;
+    broadcastRadarUpdate(isThreatAlert, false);
+    log(`Radar: Aproximación fijada en ${meters}m`);
+  };
+
+  window.triggerRadarPingFromRemote = function() {
+    vibrate(50);
+    sendDisplay({ type: 'RADAR_PING' });
+    log('📡 Ping de escaneo emitido en radar');
+  };
+
+  window.toggleRadarStealth = function() {
+    vibrate(40);
+    radarState.isStealth = !radarState.isStealth;
+    sendDisplay({ type: 'RADAR_STEALTH', isStealth: radarState.isStealth });
+    updateRemoteRadarUI();
+    log(`Radar: ${radarState.isStealth ? 'Camuflaje activado (Señal perdida)' : 'Señal recuperada'}`);
+  };
+
+  window.toggleRadarMinions = function() {
+    vibrate(35);
+    if (radarState.minions) {
+      radarState.minions = null;
+    } else {
+      const tx = radarState.target.x;
+      const ty = radarState.target.y;
+      radarState.minions = [
+        { x: Math.min(94, Math.max(6, tx - 8)), y: Math.min(94, Math.max(6, ty + 6)) },
+        { x: Math.min(94, Math.max(6, tx + 7)), y: Math.min(94, Math.max(6, ty - 5)) },
+        { x: Math.min(94, Math.max(6, tx - 4)), y: Math.min(94, Math.max(6, ty - 8)) }
+      ];
+    }
+    broadcastRadarUpdate(false);
+    log(`Radar: ${radarState.minions ? 'Manada de esbirros desplegada' : 'Esbirros eliminados del radar'}`);
+  };
+
+  window.togglePerimeterAlert = function() {
+    vibrate(45);
+    radarState.perimeterAlert = !radarState.perimeterAlert;
+    broadcastRadarUpdate(false);
+    log(`Radar: ${radarState.perimeterAlert ? '🚨 ALERTA 1 KM ACTIVADA' : 'Alerta de perímetro cancelada'}`);
+  };
+
+  // Initialize Radar Touchpad
+  initRadarTouchpad();
+
   // ==================== CAMPAIGN BACKUP & RESTORE ====================
   window.exportCampaignBackup = function() {
     vibrate(30);

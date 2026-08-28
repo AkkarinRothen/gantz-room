@@ -562,6 +562,73 @@ class GantzAudioEngine {
     subOsc.start(now);
     subOsc.stop(now + 0.38);
   }
+
+  // 6. Tactical Radar Ping (Discrete, non-intrusive sci-fi sonar ping)
+  playRadarPing() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1760, now); // A6
+    osc.frequency.exponentialRampToValueAtTime(880, now + 0.18);
+
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+    osc.connect(gain);
+    gain.connect(this.getDestination());
+    osc.start(now);
+    osc.stop(now + 0.25);
+  }
+
+  // 7. Tactical Radar Danger Threshold Alert (3-burst gentle sci-fi chime: pip-pip-pip)
+  playRadarThresholdAlert() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    [0, 0.08, 0.16].forEach((offset, idx) => {
+      const t = now + offset;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      const freq = 2000 + idx * 250;
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.9, t + 0.045);
+
+      gain.gain.setValueAtTime(0.18, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+
+      osc.connect(gain);
+      gain.connect(this.getDestination());
+      osc.start(t);
+      osc.stop(t + 0.06);
+    });
+  }
+
+  // 8. Tactical Radar Signal Lost / Stealth Glitch
+  playRadarSignalLost() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(450, now);
+    osc.frequency.exponentialRampToValueAtTime(110, now + 0.18);
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+    osc.connect(gain);
+    gain.connect(this.getDestination());
+    osc.start(now);
+    osc.stop(now + 0.22);
+  }
 }
 
 window.GantzAudio = new GantzAudioEngine();
