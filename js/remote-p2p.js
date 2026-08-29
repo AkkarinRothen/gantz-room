@@ -181,10 +181,19 @@
         appState = msg.state;
         aliensList = msg.aliens || aliensList;
         weaponsList = msg.weapons || weaponsList;
+        if (appState && appState.radarVisible !== undefined) {
+          radarState.visible = appState.radarVisible;
+          updateRemoteRadarUI();
+        }
         renderAll();
         if (msg.appVersion) {
           checkAppVersion(msg.appVersion);
         }
+        break;
+
+      case 'RADAR_VISIBILITY_STATE':
+        radarState.visible = Boolean(msg.visible);
+        updateRemoteRadarUI();
         break;
 
       case 'TIMER_UPDATED':
@@ -2539,7 +2548,8 @@
     },
     minions: null,
     isStealth: false,
-    perimeterAlert: false
+    perimeterAlert: false,
+    visible: true
   };
 
   function calculateDistanceMeters(x, y) {
@@ -2612,6 +2622,24 @@
     if (btnTogglePerimeterAlert) {
       btnTogglePerimeterAlert.style.background = perimeterAlert ? 'rgba(255,0,60,0.4)' : 'rgba(255,0,60,0.15)';
       btnTogglePerimeterAlert.style.borderColor = perimeterAlert ? '#ff003c' : 'rgba(255,0,60,0.4)';
+    }
+
+    const btnToggleRadarVisibility = document.getElementById('btnToggleRadarVisibility');
+    if (btnToggleRadarVisibility) {
+      const isVis = radarState.visible !== false;
+      btnToggleRadarVisibility.textContent = isVis ? '👁️ OCULTAR RADAR EN PANTALLA' : '👁️ MOSTRAR RADAR EN PANTALLA';
+      btnToggleRadarVisibility.style.background = isVis ? 'rgba(0,240,255,0.12)' : 'rgba(255,0,60,0.2)';
+      btnToggleRadarVisibility.style.borderColor = isVis ? 'var(--gantz-cyan)' : '#ff003c';
+      btnToggleRadarVisibility.style.color = isVis ? '#fff' : '#ff003c';
+    }
+
+    const btnQuickRadarToggle = document.getElementById('btnQuickRadarToggle');
+    if (btnQuickRadarToggle) {
+      const isVis = radarState.visible !== false;
+      btnQuickRadarToggle.textContent = isVis ? '📡 RADAR ON' : '📡 RADAR OFF';
+      btnQuickRadarToggle.style.borderColor = isVis ? '#00ff66' : '#ff003c';
+      btnQuickRadarToggle.style.color = isVis ? '#00ff66' : '#ff003c';
+      btnQuickRadarToggle.style.background = isVis ? 'transparent' : 'rgba(255,0,60,0.15)';
     }
 
     if (remoteRadarMinionsContainer) {
@@ -2785,6 +2813,14 @@
     radarState.perimeterAlert = !radarState.perimeterAlert;
     broadcastRadarUpdate(false);
     log(`Radar: ${radarState.perimeterAlert ? '🚨 ALERTA 1 KM ACTIVADA' : 'Alerta de perímetro cancelada'}`);
+  };
+
+  window.toggleRadarVisibility = function() {
+    vibrate(40);
+    radarState.visible = !(radarState.visible !== false);
+    sendDisplay({ type: 'RADAR_VISIBILITY', visible: radarState.visible });
+    updateRemoteRadarUI();
+    log(`Radar en pantalla: ${radarState.visible ? 'VISIBLE (ON)' : 'OCULTO (OFF)'}`);
   };
 
   // Initialize Radar Touchpad

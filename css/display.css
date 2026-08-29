@@ -1235,6 +1235,14 @@ body.cinema-mode .zen-exit-btn {
   box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
   overflow: hidden;
   pointer-events: none;
+  transition: opacity 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.4s;
+}
+
+.mission-mini-radar.radar-hidden {
+  opacity: 0 !important;
+  transform: scale(0.6);
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .radar-sweep {

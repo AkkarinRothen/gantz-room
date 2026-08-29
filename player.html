@@ -57,13 +57,13 @@
     </div>
 
     <!-- Live Mission Timer & Radar Card -->
-    <div class="card">
+    <div class="card" id="playerRadarCard">
       <div class="card-title">
         <span>🛰️ RADAR TÁCTICO & CUENTA ATRÁS</span>
         <span id="playerTimerText" style="margin-left: auto; font-family: var(--font-digital); font-size: 1.4rem; color: var(--gantz-green);">60:00</span>
       </div>
 
-      <div class="radar-box">
+      <div class="radar-box" id="playerRadarBox">
         <div class="radar-ring" style="width: 50px; height: 50px;"></div>
         <div class="radar-ring" style="width: 100px; height: 100px;"></div>
         <div class="radar-ring" style="width: 150px; height: 150px;"></div>
@@ -71,9 +71,12 @@
         <div class="hunter-blip" title="Tu posición"></div>
         <div class="alien-blip" title="Objetivo Alienígena"></div>
       </div>
-      <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #94a3b8; margin-top: 6px;">
+      <div id="playerRadarLegend" style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #94a3b8; margin-top: 6px;">
         <span>🟢 Tu posición</span>
         <span style="color: #ff003c;">🔴 Presa Alienígena</span>
+      </div>
+      <div id="playerRadarOfflineNotice" style="display: none; text-align: center; padding: 10px; font-size: 0.75rem; color: #94a3b8; font-style: italic;">
+        📡 RADAR APAGADO // SEÑAL EN ESPERA
       </div>
     </div>
 

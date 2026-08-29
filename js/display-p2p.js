@@ -20,6 +20,7 @@
     },
     currentAlien: aliensList[0] || null,
     currentWeapon: weaponsList[0] || null,
+    radarVisible: true,
     broadcastMessage: 'LA HABÉIS PALMADO. AHORA VUESTRAS VIDAS ME PERTENECEN.',
     hunters: [
       { id: 1, name: 'Kei Kurono', nickname: 'Kurono-kun', points: 0, totalPoints: 10, status: 'alive' },
@@ -216,6 +217,35 @@
     btnAudioToggle.style.borderColor = isMuted ? '#ff003c' : '#00f0ff';
     btnAudioToggle.style.color = isMuted ? '#ff003c' : '#00f0ff';
   });
+
+  // Radar Visibility Toggle
+  const btnRadarToggle = document.getElementById('btnRadarToggle');
+  function setRadarVisibility(visible, notify = true) {
+    appState.radarVisible = Boolean(visible);
+    if (miniRadar) {
+      miniRadar.classList.toggle('radar-hidden', !appState.radarVisible);
+    }
+    if (btnRadarToggle) {
+      btnRadarToggle.textContent = appState.radarVisible ? '📡 RADAR ON' : '📡 RADAR OFF';
+      btnRadarToggle.style.borderColor = appState.radarVisible ? '#00ff66' : '#94a3b8';
+      btnRadarToggle.style.color = appState.radarVisible ? '#00ff66' : '#94a3b8';
+    }
+    if (notify && window.GantzAudio) {
+      if (appState.radarVisible) window.GantzAudio.playRadarPing();
+      else window.GantzAudio.playRadarSignalLost();
+    }
+    saveState();
+  }
+
+  if (btnRadarToggle) {
+    btnRadarToggle.addEventListener('click', () => {
+      setRadarVisibility(!appState.radarVisible, true);
+      sendRemote({
+        type: 'RADAR_VISIBILITY_STATE',
+        visible: appState.radarVisible
+      });
+    });
+  }
 
   // CRT Filter Toggle
   const crtOverlay = document.getElementById('crtOverlay');
@@ -952,6 +982,14 @@
         triggerRadarPingVisual();
         break;
 
+      case 'RADAR_VISIBILITY':
+        setRadarVisibility(msg.visible !== undefined ? msg.visible : true, true);
+        break;
+
+      case 'TOGGLE_RADAR':
+        setRadarVisibility(!appState.radarVisible, true);
+        break;
+
       case 'RADAR_STEALTH':
         if (window.GantzAudio) window.GantzAudio.playRadarSignalLost();
         if (msg.isStealth) {
@@ -1412,5 +1450,6 @@
 
   // Boot
   setMode('standby');
+  setRadarVisibility(appState.radarVisible !== false, false);
   initMultiTransport();
 })();

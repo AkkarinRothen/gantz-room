@@ -120,6 +120,24 @@
       }
     }
 
+    // Update Radar Visibility
+    const playerRadarBox = document.getElementById('playerRadarBox');
+    const playerRadarLegend = document.getElementById('playerRadarLegend');
+    const playerRadarOfflineNotice = document.getElementById('playerRadarOfflineNotice');
+    const isRadarVis = appState.radarVisible !== false;
+
+    if (playerRadarBox) {
+      playerRadarBox.style.opacity = isRadarVis ? '1' : '0.2';
+      playerRadarBox.style.pointerEvents = isRadarVis ? 'auto' : 'none';
+      playerRadarBox.style.filter = isRadarVis ? 'none' : 'grayscale(100%)';
+    }
+    if (playerRadarLegend) {
+      playerRadarLegend.style.display = isRadarVis ? 'flex' : 'none';
+    }
+    if (playerRadarOfflineNotice) {
+      playerRadarOfflineNotice.style.display = isRadarVis ? 'none' : 'block';
+    }
+
     // Update Alien
     const currentAlien = appState.currentAlien;
     if (currentAlien) {
