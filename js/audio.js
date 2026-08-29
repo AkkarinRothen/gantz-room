@@ -28,9 +28,24 @@ class GantzAudioEngine {
 
   setMasterVolume(vol) {
     this.init();
-    const clamped = Math.max(0, Math.min(1, parseFloat(vol) || 0));
+    this.volume = Math.max(0, Math.min(1, parseFloat(vol) || 0));
     if (this.masterGain) {
-      this.masterGain.gain.setValueAtTime(clamped, this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+    }
+  }
+
+  playAssetSound(filename, fallbackFn) {
+    if (this.isMuted) return;
+    const path = `assets/audio/${filename}`;
+    const audio = new Audio(path);
+    audio.volume = this.volume !== undefined ? this.volume : 1.0;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        if (typeof fallbackFn === 'function') {
+          fallbackFn.call(this);
+        }
+      });
     }
   }
 
@@ -628,6 +643,34 @@ class GantzAudioEngine {
     gain.connect(this.getDestination());
     osc.start(now);
     osc.stop(now + 0.22);
+  }
+
+  // 9. Z-Gun (Heavy Gravity Compression Blast)
+  playZGun() {
+    if (this.isMuted) return;
+    this.playAssetSound('zgun.mp3', () => {
+      this.init();
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(35, now + 1.2);
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.3);
+      osc.connect(gain);
+      gain.connect(this.getDestination());
+      osc.start(now);
+      osc.stop(now + 1.4);
+    });
+  }
+
+  // 10. ElevenLabs Pre-rendered Gantz Voice Lines
+  playVoiceLine(key) {
+    if (this.isMuted) return;
+    this.playAssetSound(`voice_${key}.mp3`, () => {
+      console.warn(`[GantzAudio] Voice line voice_${key}.mp3 not loaded`);
+    });
   }
 }
 

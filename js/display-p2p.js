@@ -525,6 +525,44 @@
     });
   }
 
+  function renderCeremonyRoast(targetHunter, roastText) {
+    if (!appState.hunters) return;
+    scoringList.innerHTML = '';
+
+    appState.hunters.forEach((h, idx) => {
+      const row = document.createElement('div');
+      const isTarget = targetHunter && (String(h.id) === String(targetHunter.id) || h.name === targetHunter.name);
+      row.className = `score-row ${isTarget ? 'highlight' : ''}`;
+      if (isTarget) {
+        row.style.borderColor = 'var(--gantz-gold)';
+        row.style.background = 'rgba(255, 215, 0, 0.14)';
+        row.style.boxShadow = '0 0 25px rgba(255, 215, 0, 0.4)';
+      }
+
+      const suit = h.suitIntegrity !== undefined ? h.suitIntegrity : 100;
+      const suitColor = suit > 50 ? '#00ff66' : (suit > 0 ? '#00f0ff' : '#ff003c');
+      const suitLabel = suit === 100 ? '🛡️ Traje 100%' : (suit === 50 ? '⚡ Traje Fisurado (50%)' : '💥 Traje Roto (0%)');
+      const isDead = h.status === 'dead';
+
+      row.innerHTML = `
+        <div class="hunter-name-col" style="flex: 1;">
+          <div class="hunter-real-name" style="${isTarget ? 'color: var(--gantz-gold); font-size: 1.15rem; font-weight: bold;' : ''}">
+            ${idx + 1}. ${escapeHtml(h.name)} ${isDead ? '<span style="color: #ff003c; font-size: 0.72rem; font-weight: bold;">[💀 MUERTO]</span>' : ''}
+          </div>
+          <div class="hunter-gantz-nick">"${escapeHtml(h.nickname || 'Novato')}" • <span style="color: ${suitColor}; font-size: 0.72rem;">${suitLabel}</span></div>
+          ${isTarget && roastText ? `<div style="margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.75); border-left: 4px solid #00ff66; color: #00ff66; font-family: monospace; font-size: 0.92rem; border-radius: 4px; box-shadow: 0 0 15px rgba(0,255,102,0.2);">🗣️ "${escapeHtml(roastText)}"</div>` : ''}
+        </div>
+        <div class="hunter-points-col">
+          <div style="${isTarget ? 'color: var(--gantz-gold); font-size: 1.25rem; font-weight: bold;' : ''}">+${h.points || 0} pts</div>
+          <div class="hunter-total-pts">Total: ${h.totalPoints || 0}/100</div>
+        </div>
+      `;
+      scoringList.appendChild(row);
+    });
+
+    if (window.GantzAudio) window.GantzAudio.playClick();
+  }
+
   // Timer loop on Display
   setInterval(() => {
     if (appState.timer.isRunning && appState.timer.remainingSeconds > 0) {
@@ -803,6 +841,11 @@
         if (appState.mode === 'scoring') renderScoringList(appState.hunters);
         break;
 
+      case 'EVALUATE_HUNTER_CEREMONY':
+        if (appState.mode !== 'scoring') setMode('scoring');
+        renderCeremonyRoast(msg.hunter, msg.text);
+        break;
+
       case 'TRIGGER_SOUND':
         if (window.GantzAudio) {
           if (msg.sound === 'radio') window.GantzAudio.playRadioTaisou();
@@ -815,6 +858,8 @@
           else if (msg.sound === 'ygun') window.GantzAudio.playYGun();
           else if (msg.sound === 'suit') window.GantzAudio.playSuitSurge();
           else if (msg.sound === 'sword') window.GantzAudio.playSwordSlash();
+          else if (msg.sound === 'zgun') window.GantzAudio.playZGun();
+          else if (msg.sound && msg.sound.startsWith('voice_')) window.GantzAudio.playVoiceLine(msg.sound.replace('voice_', ''));
         }
         break;
 
@@ -846,6 +891,25 @@
           window.GantzAudio.stopAll();
           log('Todos los audios detenidos por el Master');
         }
+        if (window.GantzTTS) window.GantzTTS.stop();
+        break;
+
+      case 'PLAY_TTS':
+        if (msg.audioBase64) {
+          if (window.GantzTTS) {
+            window.GantzTTS.playAudioUri(msg.audioBase64).catch(e => {
+              log('Error reproduciendo audio TTS en display:', e);
+            });
+          } else {
+            const a = new Audio(msg.audioBase64);
+            a.play().catch(() => {});
+          }
+          log(`🎙️ Locución ElevenLabs de Gantz recibida: "${(msg.text || '').slice(0, 35)}..."`);
+        }
+        break;
+
+      case 'STOP_TTS':
+        if (window.GantzTTS) window.GantzTTS.stop();
         break;
 
       case 'TOGGLE_CRT':

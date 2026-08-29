@@ -627,6 +627,9 @@
           <button class="btn btn-sm ${isSelected ? 'btn-primary' : 'btn-cyan'}" onclick="selectAlien('${alien.id}')">
             ${isSelected ? '✓ EN PANTALLA' : 'Proyectar'}
           </button>
+          <button class="btn btn-sm btn-cyan" onclick="speakAlienBriefing('${alien.id}')" title="Narrar briefing con voz IA de Gantz">
+            🗣️
+          </button>
           <button class="btn btn-sm btn-gold" onclick="inspectAlien('${alien.id}')" title="Inspección táctica con zoom en pantalla grande">
             🔍 Zoom
           </button>
@@ -1055,6 +1058,9 @@
           <button class="btn btn-sm btn-primary" onclick="adjustHunterScore(${idx}, 1)">+1</button>
           <button class="btn btn-sm btn-cyan" onclick="adjustHunterScore(${idx}, 5)">+5</button>
           <button class="btn btn-sm btn-gold" onclick="adjustHunterScore(${idx}, 10)">+10</button>
+          <button class="btn btn-sm btn-cyan" onclick="openHunterRoastModal(${idx})" title="Narrar evaluación cínica de Gantz con IA">
+            🗣️
+          </button>
           <button class="btn btn-sm btn-gold" onclick="open100PtsModal(${idx})" title="Menú de 100 Puntos">
             🏆 100 PTS
           </button>
@@ -1239,6 +1245,118 @@
     sendDisplay({ type: 'SET_MODE', mode: 'scoring' });
   });
 
+  // ==================== DYNAMIC SCORING ROASTS CONTROLLER ====================
+  let currentRoastHunterIdx = null;
+
+  window.openHunterRoastModal = function(hunterIdx) {
+    vibrate(30);
+    if (!appState || !appState.hunters || !appState.hunters[hunterIdx]) return;
+    currentRoastHunterIdx = hunterIdx;
+    const h = appState.hunters[hunterIdx];
+
+    const modal = document.getElementById('scoringRoastModal');
+    const nameEl = document.getElementById('roastHunterName');
+    const ptsEl = document.getElementById('roastHunterPoints');
+    const inputEl = document.getElementById('inputHunterRoastText');
+
+    if (nameEl) nameEl.textContent = h.name || 'Cazador';
+    if (ptsEl) ptsEl.textContent = `${h.points || 0} pts (Total: ${h.totalPoints || 0})`;
+
+    const roastText = window.GantzScoringEvaluator ? window.GantzScoringEvaluator.generateRoast(h) : `${h.name}: ${h.points || 0} puntos.`;
+    if (inputEl) inputEl.value = roastText;
+
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.closeHunterRoastModal = function() {
+    vibrate(20);
+    const modal = document.getElementById('scoringRoastModal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.rerollHunterRoast = function() {
+    vibrate(25);
+    if (currentRoastHunterIdx === null || !appState?.hunters?.[currentRoastHunterIdx]) return;
+    const h = appState.hunters[currentRoastHunterIdx];
+    const inputEl = document.getElementById('inputHunterRoastText');
+    if (inputEl && window.GantzScoringEvaluator) {
+      inputEl.value = window.GantzScoringEvaluator.generateRoast(h);
+    }
+  };
+
+  window.confirmNarrateHunterScore = async function() {
+    vibrate(40);
+    if (currentRoastHunterIdx === null || !appState?.hunters?.[currentRoastHunterIdx]) return;
+    const h = appState.hunters[currentRoastHunterIdx];
+    const inputEl = document.getElementById('inputHunterRoastText');
+    const text = inputEl ? inputEl.value.trim() : '';
+    if (!text) return;
+
+    closeHunterRoastModal();
+    await narrateSingleHunterRoast(h, text);
+  };
+
+  async function narrateSingleHunterRoast(hunter, text) {
+    // 1. Switch display to scoring mode and highlight hunter
+    sendDisplay({
+      type: 'EVALUATE_HUNTER_CEREMONY',
+      hunter: hunter,
+      text: text
+    });
+
+    // 2. Synthesize audio via ElevenLabs
+    if (window.GantzTTS && window.GantzTTS.hasApiKey()) {
+      try {
+        log(`🎙️ Generando locución de Gantz para ${hunter.name}...`);
+        const res = await window.GantzTTS.synthesize(text);
+        sendDisplay({
+          type: 'PLAY_TTS',
+          audioBase64: res.audioBase64,
+          text: text
+        });
+      } catch (err) {
+        log('❌ Error TTS:', err.message);
+      }
+    }
+  }
+
+  window.evaluateAllHuntersWithTTS = async function() {
+    vibrate(50);
+    if (!appState || !appState.hunters || appState.hunters.length === 0) {
+      alert('No hay cazadores registrados para evaluar.');
+      return;
+    }
+
+    const btn = document.getElementById('btnEvaluateAllTTS');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ EVALUANDO...';
+    }
+
+    sendDisplay({ type: 'SET_MODE', mode: 'scoring' });
+    sendDisplay({ type: 'TRIGGER_SOUND', sound: 'score' });
+
+    log('🎙️ Iniciando evaluación ceremonial completa con voz de Gantz...');
+
+    for (let i = 0; i < appState.hunters.length; i++) {
+      const h = appState.hunters[i];
+      const text = window.GantzScoringEvaluator ? window.GantzScoringEvaluator.generateRoast(h) : `${h.name}: ${h.points || 0} puntos.`;
+
+      log(`[${i + 1}/${appState.hunters.length}] Evaluando a ${h.name}...`);
+      await narrateSingleHunterRoast(h, text);
+
+      // Wait for speech duration (~14 chars/sec + 1.8s pause)
+      const waitTime = Math.max(3500, (text.length / 14) * 1000 + 1800);
+      await new Promise(r => setTimeout(r, waitTime));
+    }
+
+    log('✨ Ceremonia de evaluación completada');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🗣️ EVALUAR CON VOZ GANTZ';
+    }
+  };
+
   // ==================== SHADOWDARK INITIATIVE & TURN TRACKER ====================
   let initiativeQueue = [];
   let currentTurnIndex = -1;
@@ -1327,7 +1445,7 @@
     });
   }
 
-  // 4. BROADCAST
+  // 4. BROADCAST & TTS
   btnSendCustomMsg.addEventListener('click', () => {
     vibrate(35);
     const msg = customMsgInput.value.trim();
@@ -1341,6 +1459,424 @@
     customMsgInput.value = text;
     sendDisplay({ type: 'BROADCAST_MESSAGE', message: text });
   };
+
+  // ==================== ELEVENLABS TTS CONTROLLER ====================
+  function updateTtsStatusBadge() {
+    const badge = document.getElementById('remoteTtsStatusBadge');
+    if (!badge) return;
+    const rawKey = window.GantzTTS ? window.GantzTTS.getApiKey() : '';
+    if (!rawKey) {
+      badge.textContent = '🟡 SIN CLAVE';
+      badge.style.borderColor = '#ffd700';
+      badge.style.color = '#ffd700';
+      badge.style.background = 'rgba(255,215,0,0.15)';
+    } else if (!rawKey.startsWith('sk_')) {
+      badge.textContent = '🔴 CLAVE INVÁLIDA (FALTA sk_)';
+      badge.style.borderColor = '#ff003c';
+      badge.style.color = '#ff003c';
+      badge.style.background = 'rgba(255,0,60,0.2)';
+    } else {
+      badge.textContent = '🟢 CLAVE ACTIVA (sk_...)';
+      badge.style.borderColor = '#00ff66';
+      badge.style.color = '#00ff66';
+      badge.style.background = 'rgba(0,255,102,0.15)';
+    }
+  }
+
+  window.openElevenLabsModal = function() {
+    vibrate(30);
+    const modal = document.getElementById('elevenLabsSettingsModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+
+    const inputKey = document.getElementById('inputElevenLabsApiKey');
+    const labelSource = document.getElementById('labelKeySource');
+    const selectPreset = document.getElementById('selectElevenLabsVoicePreset');
+    const inputCustom = document.getElementById('inputElevenLabsCustomVoice');
+
+    const curKey = window.GantzTTS ? window.GantzTTS.getApiKey() : '';
+    if (inputKey) inputKey.value = curKey;
+
+    const fromConfig = window.GANTZ_CONFIG?.ELEVENLABS_API_KEY;
+    const fromLocal = localStorage.getItem('gantz_elevenlabs_api_key');
+    if (labelSource) {
+      if (fromLocal) labelSource.textContent = '📦 Guardada en Navegador';
+      else if (fromConfig) labelSource.textContent = '📄 Leída de config.js';
+      else labelSource.textContent = '⚠️ Sin configurar';
+    }
+
+    const curVoice = window.GantzTTS ? window.GantzTTS.getVoiceId() : 'pNInz6obpgDQGcFmaJgB';
+    const presets = ['pNInz6obpgDQGcFmaJgB', 'ErXwobaYiN019PkySvjV', '21m00Tcm4TlvDq8ikWAM', 'VR6AewLTigWG4xSOukaG'];
+    if (presets.includes(curVoice)) {
+      if (selectPreset) selectPreset.value = curVoice;
+      if (inputCustom) inputCustom.style.display = 'none';
+    } else {
+      if (selectPreset) selectPreset.value = 'custom';
+      if (inputCustom) {
+        inputCustom.style.display = 'block';
+        inputCustom.value = curVoice;
+      }
+    }
+  };
+
+  window.closeElevenLabsModal = function() {
+    vibrate(20);
+    const modal = document.getElementById('elevenLabsSettingsModal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.toggleShowApiKey = function() {
+    const input = document.getElementById('inputElevenLabsApiKey');
+    const btn = document.getElementById('btnToggleShowApiKey');
+    if (input) {
+      if (input.type === 'password') {
+        input.type = 'text';
+        if (btn) btn.textContent = '🔒';
+      } else {
+        input.type = 'password';
+        if (btn) btn.textContent = '👁️';
+      }
+    }
+  };
+
+  window.onVoicePresetChange = function(val) {
+    const inputCustom = document.getElementById('inputElevenLabsCustomVoice');
+    if (inputCustom) {
+      inputCustom.style.display = val === 'custom' ? 'block' : 'none';
+      if (val === 'custom') inputCustom.focus();
+    }
+  };
+
+  window.saveElevenLabsConfig = function(e) {
+    if (e) e.preventDefault();
+    vibrate(40);
+    const inputKey = document.getElementById('inputElevenLabsApiKey');
+    const selectPreset = document.getElementById('selectElevenLabsVoicePreset');
+    const inputCustom = document.getElementById('inputElevenLabsCustomVoice');
+
+    const key = inputKey ? inputKey.value.trim() : '';
+    let voiceId = selectPreset ? selectPreset.value : '';
+    if (voiceId === 'custom' && inputCustom) {
+      voiceId = inputCustom.value.trim();
+    }
+
+    if (window.GantzTTS) {
+      window.GantzTTS.setApiKey(key);
+      window.GantzTTS.setVoiceId(voiceId);
+    }
+
+    updateTtsStatusBadge();
+    closeElevenLabsModal();
+    log(`✓ Configuración ElevenLabs guardada (Voz: ${voiceId || 'Default'})`);
+  };
+
+  window.clearElevenLabsAudioCache = async function() {
+    vibrate(40);
+    if (window.indexedDB) {
+      try {
+        window.indexedDB.deleteDatabase('GantzTTSDB');
+        log('🗑️ Caché de audios de ElevenLabs vaciada con éxito');
+        alert('Caché local de audio de ElevenLabs vaciada.');
+      } catch (e) {
+        log('Error vaciando caché:', e);
+      }
+    }
+  };
+
+  window.sendMsgWithTTS = async function() {
+    vibrate(35);
+    const msg = customMsgInput.value.trim();
+    if (!msg) return;
+
+    sendDisplay({ type: 'BROADCAST_MESSAGE', message: msg });
+
+    if (!window.GantzTTS || !window.GantzTTS.hasApiKey()) {
+      openElevenLabsModal();
+      log('⚠️ Por favor ingresa tu API Key de ElevenLabs para generar audio.');
+      return;
+    }
+
+    const btn = document.getElementById('btnSendCustomMsgTTS');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ GENERANDO...';
+    }
+
+    try {
+      const res = await window.GantzTTS.synthesize(msg);
+      log(`🎙️ Audio TTS listo (${res.fromCache ? 'de caché' : 'de ElevenLabs API'})`);
+      sendDisplay({
+        type: 'PLAY_TTS',
+        audioBase64: res.audioBase64,
+        text: msg
+      });
+    } catch (err) {
+      log('❌ Error TTS:', err.message);
+      alert(`Error ElevenLabs: ${err.message}`);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🗣️ TEXTO + VOZ GANTZ';
+      }
+    }
+  };
+
+  window.testGantzVoice = async function() {
+    vibrate(40);
+    if (!window.GantzTTS || !window.GantzTTS.hasApiKey()) {
+      openElevenLabsModal();
+      log('⚠️ Configura tu API Key de ElevenLabs primero.');
+      return;
+    }
+
+    const testPhrases = [
+      'SISTEMA DE GANTZ INICIADO. LA HABÉIS PALMADO.',
+      'CAZAD AL OBJETIVO O VUESTRAS CABEZAS EXPLOTARÁN.',
+      'HABÉIS SIDO UNOS INÚTILES ESTA NOCHE.'
+    ];
+    const phrase = testPhrases[Math.floor(Math.random() * testPhrases.length)];
+
+    log(`🎙️ Sintetizando prueba: "${phrase}"...`);
+    try {
+      const res = await window.GantzTTS.synthesize(phrase);
+      sendDisplay({
+        type: 'PLAY_TTS',
+        audioBase64: res.audioBase64,
+        text: phrase
+      });
+      if (!isPeerConnected && window.GantzTTS) {
+        window.GantzTTS.playAudioUri(res.audioBase64);
+      }
+    } catch (err) {
+      log('❌ Error probando voz:', err.message);
+      alert(`Error ElevenLabs: ${err.message}`);
+    }
+  };
+
+  window.speakAlienBriefing = async function(alienId) {
+    vibrate(35);
+    const alien = aliensList.find(a => a.id === alienId);
+    if (!alien) return;
+
+    if (!window.GantzTTS || !window.GantzTTS.hasApiKey()) {
+      openElevenLabsModal();
+      log('⚠️ Configura tu API Key de ElevenLabs primero.');
+      return;
+    }
+
+    selectAlien(alienId);
+
+    const chars = Array.isArray(alien.characteristics) ? alien.characteristics.join(', ') : (alien.characteristics || '');
+    const text = `OBJETIVO: ${alien.name}. PUNTOS: ${alien.points || 0}. CARACTERÍSTICAS: ${chars}. LE GUSTA: ${alien.likes || 'Desconocido'}. FRASE FAVORITA: ${alien.quote || 'Ninguna'}.`;
+
+    log(`🎙️ Narrando briefing de ${alien.name}...`);
+    try {
+      const res = await window.GantzTTS.synthesize(text);
+      sendDisplay({
+        type: 'PLAY_TTS',
+        audioBase64: res.audioBase64,
+        text: text
+      });
+    } catch (err) {
+      log('❌ Error narrando alien:', err.message);
+      alert(`Error ElevenLabs: ${err.message}`);
+    }
+  };
+
+  // Initialize TTS status on load
+  setTimeout(updateTtsStatusBadge, 500);
+
+  // ==================== ELEVENLABS SFX SOUND LAB CONTROLLER ====================
+  let currentGeneratedSfx = null;
+
+  const sliderSfxDuration = document.getElementById('sliderSfxDuration');
+  const labelSfxDuration = document.getElementById('labelSfxDuration');
+  if (sliderSfxDuration && labelSfxDuration) {
+    sliderSfxDuration.addEventListener('input', () => {
+      labelSfxDuration.textContent = `${parseFloat(sliderSfxDuration.value).toFixed(1)}s`;
+    });
+  }
+
+  window.fillSfxPrompt = function(text) {
+    vibrate(20);
+    const input = document.getElementById('inputCustomSfxPrompt');
+    if (input) {
+      input.value = text;
+      input.focus();
+    }
+  };
+
+  window.generateCustomSFX = async function() {
+    vibrate(35);
+    const input = document.getElementById('inputCustomSfxPrompt');
+    const slider = document.getElementById('sliderSfxDuration');
+    const prompt = input ? input.value.trim() : '';
+
+    if (!prompt) {
+      alert('Por favor escribe una descripción del sonido o pulsa un botón de inspiración.');
+      return;
+    }
+
+    if (!window.GantzTTS || !window.GantzTTS.hasApiKey()) {
+      openElevenLabsModal();
+      log('⚠️ Configura tu API Key de ElevenLabs primero.');
+      return;
+    }
+
+    const btnGen = document.getElementById('btnGenerateCustomSFX');
+    const btnPrev = document.getElementById('btnPreviewCustomSFX');
+    const btnSend = document.getElementById('btnSendCustomSFX');
+    const btnSave = document.getElementById('btnSaveToSoundboard');
+
+    if (btnGen) {
+      btnGen.disabled = true;
+      btnGen.textContent = '⏳ GENERANDO SFX...';
+    }
+
+    try {
+      const duration = slider ? parseFloat(slider.value) : 2.5;
+      log(`⚡ Generando SFX (${duration}s): "${prompt}"...`);
+      const res = await window.GantzTTS.generateSoundEffect(prompt, duration);
+
+      currentGeneratedSfx = res;
+      log(`✓ SFX generado con éxito (${res.fromCache ? 'de caché' : 'de ElevenLabs API'})`);
+
+      if (btnPrev) btnPrev.disabled = false;
+      if (btnSend) btnSend.disabled = false;
+      if (btnSave) btnSave.disabled = false;
+
+      // Play local preview automatically
+      if (window.GantzTTS) {
+        window.GantzTTS.playAudioUri(res.audioBase64).catch(() => {});
+      }
+    } catch (err) {
+      log('❌ Error generando SFX:', err.message);
+      alert(`Error ElevenLabs Sound Gen: ${err.message}`);
+    } finally {
+      if (btnGen) {
+        btnGen.disabled = false;
+        btnGen.textContent = '⚡ GENERAR SFX';
+      }
+    }
+  };
+
+  window.previewCurrentCustomSFX = function() {
+    vibrate(20);
+    if (currentGeneratedSfx && currentGeneratedSfx.audioBase64 && window.GantzTTS) {
+      window.GantzTTS.playAudioUri(currentGeneratedSfx.audioBase64).catch(() => {});
+    }
+  };
+
+  window.sendCurrentCustomSFXToDisplay = function() {
+    vibrate(40);
+    if (!currentGeneratedSfx || !currentGeneratedSfx.audioBase64) return;
+
+    sendDisplay({
+      type: 'PLAY_TTS',
+      audioBase64: currentGeneratedSfx.audioBase64,
+      text: `SFX: ${currentGeneratedSfx.prompt}`
+    });
+    log(`📺 SFX transmitido a la Pantalla Grande: "${currentGeneratedSfx.prompt.slice(0, 30)}..."`);
+  };
+
+  // ==================== PERSISTENT SESSION SOUNDBOARD ====================
+  function getSessionSoundboard() {
+    try {
+      const raw = localStorage.getItem('gantz_session_soundboard');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveSessionSoundboard(list) {
+    try {
+      localStorage.setItem('gantz_session_soundboard', JSON.stringify(list));
+    } catch (e) {}
+  }
+
+  window.saveCustomSFXToSoundboard = function() {
+    vibrate(30);
+    if (!currentGeneratedSfx || !currentGeneratedSfx.audioBase64) return;
+
+    const defaultName = currentGeneratedSfx.prompt.split(' ')[0] || 'SFX';
+    const customName = prompt('Nombre para el botón en la botonera:', defaultName);
+    if (!customName || !customName.trim()) return;
+
+    const list = getSessionSoundboard();
+    const item = {
+      id: Date.now(),
+      name: customName.trim().slice(0, 20),
+      prompt: currentGeneratedSfx.prompt,
+      duration: currentGeneratedSfx.duration,
+      audioBase64: currentGeneratedSfx.audioBase64
+    };
+
+    list.push(item);
+    saveSessionSoundboard(list);
+    renderSessionSoundboard();
+    log(`💾 Guardado en Botonera de Sesión: "${item.name}"`);
+  };
+
+  window.renderSessionSoundboard = function() {
+    const container = document.getElementById('sessionSoundboardList');
+    if (!container) return;
+
+    const list = getSessionSoundboard();
+    if (list.length === 0) {
+      container.innerHTML = '<div style="font-size: 0.7rem; color: #64748b; font-style: italic;">Sin sonidos guardados aún. Genera uno arriba y pulsa "Guardar en Botonera".</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    list.forEach(item => {
+      const chip = document.createElement('div');
+      chip.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; background: rgba(0,240,255,0.12); border: 1px solid #00f0ff; border-radius: 4px; padding: 2px 6px; font-size: 0.72rem;';
+      chip.innerHTML = `
+        <button type="button" class="btn btn-sm btn-cyan" onclick="playSessionSound(${item.id})" style="padding: 2px 6px; font-size: 0.72rem; font-weight: bold;" title="${escapeHtml(item.prompt)}">
+          ▶ ${escapeHtml(item.name)}
+        </button>
+        <button type="button" onclick="deleteSessionSound(${item.id})" style="background: none; border: none; color: #ff003c; cursor: pointer; font-size: 0.75rem; padding: 0 2px;">✕</button>
+      `;
+      container.appendChild(chip);
+    });
+  };
+
+  window.playSessionSound = function(id) {
+    vibrate(30);
+    const list = getSessionSoundboard();
+    const item = list.find(s => s.id === id);
+    if (!item) return;
+
+    sendDisplay({
+      type: 'PLAY_TTS',
+      audioBase64: item.audioBase64,
+      text: `SFX: ${item.name}`
+    });
+    if (!isPeerConnected && window.GantzTTS) {
+      window.GantzTTS.playAudioUri(item.audioBase64).catch(() => {});
+    }
+    log(`🔊 Disparando SFX de sesión: "${item.name}"`);
+  };
+
+  window.deleteSessionSound = function(id) {
+    vibrate(20);
+    let list = getSessionSoundboard();
+    list = list.filter(s => s.id !== id);
+    saveSessionSoundboard(list);
+    renderSessionSoundboard();
+  };
+
+  window.clearSessionSoundboard = function() {
+    vibrate(35);
+    if (confirm('¿Vaciar todos los sonidos guardados en la botonera de la sesión?')) {
+      localStorage.removeItem('gantz_session_soundboard');
+      renderSessionSoundboard();
+      log('🗑️ Botonera de sesión vaciada');
+    }
+  };
+
+  setTimeout(renderSessionSoundboard, 600);
 
   // ==================== 1-TOUCH SESSION MACROS ====================
   window.macroStartMission = function() {

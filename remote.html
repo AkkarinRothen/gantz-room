@@ -197,8 +197,15 @@
           <div style="display: flex; gap: 6px;">
             <button class="btn btn-sm" id="btnAddHunter">➕ Cazador</button>
             <button class="btn btn-gold btn-sm" onclick="generateMangaReport(appState, aliensList)" title="Generar Ficha Manga de la Misión">📄 Reporte</button>
-            <button class="btn btn-primary btn-sm" id="btnBroadcastScoring">📺 Evaluar</button>
           </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+          <button class="btn btn-primary btn-sm" id="btnBroadcastScoring">
+            📺 PANTALLA PUNTOS
+          </button>
+          <button class="btn btn-cyan btn-sm" id="btnEvaluateAllTTS" onclick="evaluateAllHuntersWithTTS()" style="font-weight: bold;">
+            🗣️ EVALUAR CON VOZ GANTZ
+          </button>
         </div>
         <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">
           Ajusta puntos, estado vital y traje G-Suit de cada jugador:
@@ -230,9 +237,14 @@
           <div class="card-title">💬 TRANSMISIÓN EN VIVO A LA ESFERA</div>
         </div>
         <textarea class="terminal-textarea" id="customMsgInput" placeholder="Escribe el mensaje que aparecerá en verde en la pantalla..."></textarea>
-        <button class="btn btn-primary" id="btnSendCustomMsg" style="width: 100%;">
-          ⚡ TRANSMITIR TEXTO EN PANTALLA
-        </button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+          <button class="btn btn-primary" id="btnSendCustomMsg" style="font-size: 0.78rem;">
+            ⚡ SOLO TEXTO
+          </button>
+          <button class="btn btn-cyan" id="btnSendCustomMsgTTS" onclick="sendMsgWithTTS()" style="font-size: 0.78rem; font-weight: bold;">
+            🗣️ TEXTO + VOZ GANTZ
+          </button>
+        </div>
 
         <div class="preset-chip-grid">
           <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 10px;">Frases icónicas del Manga:</div>
@@ -298,8 +310,94 @@
           <button class="btn btn-danger" onclick="triggerSFX('alarm')">🚨 Alarma Peligro</button>
           <button class="btn btn-cyan" onclick="triggerSFX('transfer')">⚡ Teletransporte</button>
           <button class="btn" onclick="triggerSFX('boot')">🔮 Chime Esfera</button>
+          <button class="btn btn-danger" onclick="triggerSFX('zgun')">💥 Z-Gun Cañón</button>
           <button class="btn btn-primary" onclick="triggerSFX('score')">🎉 Jingle Puntos</button>
-          <button class="btn" onclick="triggerSFX('click')">🔘 Clic Digital</button>
+          <button class="btn btn-cyan" onclick="triggerSFX('voice_welcome')">🗣️ Voz: Bienvenida</button>
+          <button class="btn btn-gold" onclick="triggerSFX('voice_100pts')">🏆 Voz: 100 Puntos</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🎙️ ELEVENLABS TTS // VOZ DE GANTZ</div>
+          <span id="remoteTtsStatusBadge" style="font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #ff003c; color: #ff003c; background: rgba(255,0,60,0.15);">🟡 SIN CLAVE</span>
+        </div>
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px;">
+          Síntesis de voz con IA para mensajes de la Esfera y briefings con caché local:
+        </div>
+        <div class="btn-grid-2">
+          <button type="button" class="btn btn-cyan" onclick="openElevenLabsModal()" style="font-size: 0.75rem;">
+            ⚙️ AJUSTAR API KEY / VOZ
+          </button>
+          <button type="button" class="btn btn-gold" onclick="testGantzVoice()" style="font-size: 0.75rem;">
+            🔊 PROBAR VOZ GANTZ
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== ELEVENLABS SFX SOUND LAB ==================== -->
+      <div class="card" id="soundLabCard" style="border-color: #00f0ff; box-shadow: 0 0 15px rgba(0,240,255,0.15);">
+        <div class="card-header">
+          <div class="card-title" style="color: #00f0ff;">🧪 LABORATORIO DE SFX // ELEVENLABS</div>
+          <span style="font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; border: 1px solid #00f0ff; color: #00f0ff; background: rgba(0,240,255,0.15);">AI SOUND GEN</span>
+        </div>
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px;">
+          Escribe cualquier sonido ambiental o de combate para generarlo al instante:
+        </div>
+
+        <!-- Preset Chips by Category -->
+        <div style="margin-bottom: 10px;">
+          <div style="font-size: 0.68rem; color: #00ff66; font-weight: bold; margin-bottom: 4px;">INSPIRACIÓN RÁPIDA (1 TOQUE):</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <button type="button" class="btn btn-sm" onclick="fillSfxPrompt('Ácido alienígena corrosivo derritiendo blindaje de metal y asfalto')" style="font-size: 0.68rem; padding: 2px 6px;">👽 Ácido Alien</button>
+            <button type="button" class="btn btn-sm" onclick="fillSfxPrompt('Tentáculos húmedos gigantes arrastrándose a gran velocidad')" style="font-size: 0.68rem; padding: 2px 6px;">🐙 Tentáculos</button>
+            <button type="button" class="btn btn-sm" onclick="fillSfxPrompt('Rugido gutural monstruoso y ensordecedor de criatura gigante')" style="font-size: 0.68rem; padding: 2px 6px;">🦖 Rugido Bestia</button>
+            <button type="button" class="btn btn-sm" onclick="fillSfxPrompt('Sobrecarga de cañón electromagnético con disparo de plasma pesado')" style="font-size: 0.68rem; padding: 2px 6px;">⚡ Cañón Plasma</button>
+            <button type="button" class="btn btn-sm" onclick="fillSfxPrompt('Hormigón de edificio colapsando tras un violento impacto sísmico')" style="font-size: 0.68rem; padding: 2px 6px;">💥 Derrumbe</button>
+            <button type="button" class="btn btn-sm" onclick="fillSfxPrompt('Zumbido electromagnético ominoso extraterrestre con estática')" style="font-size: 0.68rem; padding: 2px 6px;">⚠️ Zumbido Ominoso</button>
+          </div>
+        </div>
+
+        <!-- Prompt input -->
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label class="form-label" style="font-size: 0.72rem;">DESCRIPCIÓN DEL SONIDO (PROMPT):</label>
+          <input type="text" class="form-input" id="inputCustomSfxPrompt" placeholder="Ej: Rayo de plasma perforando blindaje..." style="font-size: 0.82rem; font-family: monospace;">
+        </div>
+
+        <!-- Duration slider -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; background: rgba(0,0,0,0.4); padding: 6px 10px; border-radius: 4px; border: 1px solid rgba(0,240,255,0.15);">
+          <span style="font-size: 0.75rem; color: #94a3b8;">⏱️ Duración:</span>
+          <input type="range" id="sliderSfxDuration" min="1.0" max="5.0" step="0.5" value="2.5" style="flex: 1; accent-color: #00f0ff;">
+          <span id="labelSfxDuration" style="font-size: 0.8rem; font-family: monospace; color: #00f0ff; min-width: 38px;">2.5s</span>
+        </div>
+
+        <!-- Actions -->
+        <div class="btn-grid-2" style="margin-bottom: 10px;">
+          <button type="button" class="btn btn-primary" id="btnGenerateCustomSFX" onclick="generateCustomSFX()" style="font-weight: bold; font-size: 0.78rem;">
+            ⚡ GENERAR SFX
+          </button>
+          <button type="button" class="btn btn-gold" id="btnPreviewCustomSFX" onclick="previewCurrentCustomSFX()" style="font-size: 0.78rem;" disabled>
+            🔊 PREVISUALIZAR
+          </button>
+        </div>
+        <div class="btn-grid-2">
+          <button type="button" class="btn btn-cyan" id="btnSendCustomSFX" onclick="sendCurrentCustomSFXToDisplay()" style="font-weight: bold; font-size: 0.78rem;" disabled>
+            📺 TRANSMITIR A ESFERA
+          </button>
+          <button type="button" class="btn" id="btnSaveToSoundboard" onclick="saveCustomSFXToSoundboard()" style="font-size: 0.78rem;" disabled>
+            💾 GUARDAR EN BOTONERA
+          </button>
+        </div>
+
+        <!-- Dynamic Session Soundboard -->
+        <div style="margin-top: 14px; border-top: 1px dashed rgba(0,240,255,0.25); padding-top: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <div style="font-size: 0.72rem; color: #ffd700; font-weight: bold;">🎹 BOTONERA DE SESIÓN (GUARDADOS):</div>
+            <button type="button" class="btn btn-sm btn-danger" onclick="clearSessionSoundboard()" style="font-size: 0.6rem; padding: 1px 6px;">Vaciar</button>
+          </div>
+          <div id="sessionSoundboardList" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px;">
+            <div style="font-size: 0.7rem; color: #64748b; font-style: italic;">Sin sonidos guardados aún. Genera uno arriba y pulsa "Guardar en Botonera".</div>
+          </div>
         </div>
       </div>
 
@@ -882,11 +980,113 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: ELEVENLABS TTS SETTINGS ==================== -->
+  <div class="modal-overlay" id="elevenLabsSettingsModal" style="display: none; z-index: 10009;">
+    <div class="modal-content" style="max-width: 480px; text-align: left; border-color: var(--gantz-cyan); box-shadow: 0 0 35px rgba(0,240,255,0.35);">
+      <div class="card-header" style="border-bottom: 1px solid rgba(0,240,255,0.3); padding-bottom: 8px;">
+        <div class="card-title" style="color: var(--gantz-cyan); display: flex; align-items: center; gap: 8px;">
+          <span>🎙️</span> <span>ELEVENLABS TTS // CONFIGURACIÓN</span>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="closeElevenLabsModal()">✕</button>
+      </div>
+
+      <div style="font-size: 0.75rem; color: #94a3b8; margin: 10px 0 14px 0; line-height: 1.4;">
+        Configura tu API Key privada de ElevenLabs. Se guarda de forma local en tu navegador / dispositivo para que nunca se suba a GitHub.
+      </div>
+
+      <form id="elevenLabsConfigForm" onsubmit="saveElevenLabsConfig(event)">
+        <div class="form-group">
+          <label class="form-label" style="display: flex; justify-content: space-between;">
+            <span>API KEY DE ELEVENLABS</span>
+            <span id="labelKeySource" style="font-size: 0.65rem; color: var(--gantz-gold);"></span>
+          </label>
+          <div style="display: flex; gap: 6px;">
+            <input type="password" class="form-input" id="inputElevenLabsApiKey" placeholder="sk_..." style="flex: 1; font-family: monospace;">
+            <button type="button" class="btn btn-sm" id="btnToggleShowApiKey" onclick="toggleShowApiKey()" style="padding: 0 10px;">👁️</button>
+          </div>
+          <div style="font-size: 0.68rem; color: #64748b; margin-top: 3px;">
+            💡 También puedes definirla de forma permanente en tu archivo local <code>config.js</code>.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">VOZ PREDETERMINADA (VOICE ID)</label>
+          <select class="form-input" id="selectElevenLabsVoicePreset" onchange="onVoicePresetChange(this.value)" style="margin-bottom: 6px;">
+            <option value="pNInz6obpgDQGcFmaJgB">Adam (Profunda, Narrador / Gantz)</option>
+            <option value="ErXwobaYiN019PkySvjV">Antoni (Enérgica, Juvenil)</option>
+            <option value="21m00Tcm4TlvDq8ikWAM">Rachel (Clara, Calma)</option>
+            <option value="VR6AewLTigWG4xSOukaG">Arnold (Grave, Monstruo)</option>
+            <option value="custom">✏️ Voice ID personalizado...</option>
+          </select>
+          <input type="text" class="form-input" id="inputElevenLabsCustomVoice" placeholder="Pega aquí el Voice ID de ElevenLabs..." style="display: none; font-family: monospace; font-size: 0.8rem;">
+        </div>
+
+        <div style="background: rgba(0,0,0,0.5); border: 1px dashed rgba(0,240,255,0.2); border-radius: 6px; padding: 10px; margin: 12px 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 0.75rem; font-weight: bold; color: #fff;">💾 CACHÉ LOCAL DE AUDIO (INDEXEDDB)</div>
+              <div style="font-size: 0.68rem; color: #94a3b8;">Los audios generados se guardan localmente para no gastar créditos.</div>
+            </div>
+            <button type="button" class="btn btn-sm btn-danger" onclick="clearElevenLabsAudioCache()" style="font-size: 0.68rem; padding: 4px 8px;">
+              🗑️ Vaciar Caché
+            </button>
+          </div>
+        </div>
+
+        <div class="btn-grid-2" style="margin-top: 14px;">
+          <button type="button" class="btn" onclick="closeElevenLabsModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: CUSTOM HUNTER ROAST & SCORING SPEECH ==================== -->
+  <div class="modal-overlay" id="scoringRoastModal" style="display: none; z-index: 10010;">
+    <div class="modal-content" style="max-width: 480px; text-align: left; border-color: var(--gantz-gold); box-shadow: 0 0 35px rgba(255,215,0,0.35);">
+      <div class="card-header" style="border-bottom: 1px dashed rgba(255,215,0,0.4); padding-bottom: 8px;">
+        <div class="card-title" style="color: var(--gantz-gold); display: flex; align-items: center; gap: 8px;">
+          <span>🗣️</span> <span id="roastModalTitle">EVALUACIÓN DE GANTZ</span>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="closeHunterRoastModal()">✕</button>
+      </div>
+
+      <div style="margin: 10px 0; background: rgba(0,0,0,0.5); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,215,0,0.2); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 0.72rem; color: #94a3b8;">Cazador:</div>
+          <div style="font-size: 1.05rem; font-weight: bold; color: #fff;" id="roastHunterName">Kei Kurono</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.72rem; color: #94a3b8;">Puntos:</div>
+          <div style="font-size: 1.15rem; font-weight: bold; color: var(--gantz-gold); font-family: monospace;" id="roastHunterPoints">15 pts</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="display: flex; justify-content: space-between;">
+          <span>COMENTARIO / INSULTO DE GANTZ</span>
+          <button type="button" class="btn btn-sm" onclick="rerollHunterRoast()" style="padding: 1px 6px; font-size: 0.65rem; border-color: var(--gantz-gold); color: var(--gantz-gold);">🎲 Otra Frase</button>
+        </label>
+        <textarea class="form-textarea" id="inputHunterRoastText" rows="3" placeholder="Escribe o edita el comentario de la esfera..." style="font-size: 0.85rem; font-family: monospace;"></textarea>
+      </div>
+
+      <div class="btn-grid-2" style="margin-top: 14px;">
+        <button type="button" class="btn" onclick="closeHunterRoastModal()">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="confirmNarrateHunterScore()" style="font-weight: bold;">
+          🗣️ PROYECTAR Y NARRAR EN ESFERA
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
   <script src="js/logger.js"></script>
   <script src="js/vendor/peerjs.min.js"></script>
   <script src="js/vendor/html5-qrcode.min.js"></script>
   <script src="data/aliens.js"></script>
   <script src="data/weapons.js"></script>
+  <script src="js/elevenlabs-tts.js"></script>
+  <script src="js/scoring-evaluator.js"></script>
   <script src="js/manga-report.js"></script>
   <script src="js/remote-p2p.js"></script>
   <script>
