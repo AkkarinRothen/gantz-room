@@ -672,6 +672,99 @@ class GantzAudioEngine {
       console.warn(`[GantzAudio] Voice line voice_${key}.mp3 not loaded`);
     });
   }
+
+  // 11. Suit Breach (Nodes Overload & Blue Fluid Burst)
+  playSuitBreach() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    // High frequency pop
+    const popOsc = this.ctx.createOscillator();
+    const popGain = this.ctx.createGain();
+    popOsc.type = 'square';
+    popOsc.frequency.setValueAtTime(2400, now);
+    popOsc.frequency.exponentialRampToValueAtTime(120, now + 0.12);
+    popGain.gain.setValueAtTime(0.35, now);
+    popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    popOsc.connect(popGain);
+    popGain.connect(this.getDestination());
+    popOsc.start(now);
+    popOsc.stop(now + 0.16);
+
+    // Liquid hiss & failure hum
+    const humOsc = this.ctx.createOscillator();
+    const humGain = this.ctx.createGain();
+    humOsc.type = 'sawtooth';
+    humOsc.frequency.setValueAtTime(95, now + 0.08);
+    humOsc.frequency.linearRampToValueAtTime(60, now + 0.6);
+    humGain.gain.setValueAtTime(0.001, now);
+    humGain.gain.setValueAtTime(0.28, now + 0.08);
+    humGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+    humOsc.connect(humGain);
+    humGain.connect(this.getDestination());
+    humOsc.start(now + 0.08);
+    humOsc.stop(now + 0.7);
+  }
+
+  // 12. X-Gun / X-Rifle Delayed Molecular Detonation
+  playDelayedExplosion() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    // 3 Inward suction pulses
+    [0, 0.12, 0.24].forEach((offset, idx) => {
+      const t = now + offset;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(180 + idx * 80, t);
+      osc.frequency.exponentialRampToValueAtTime(800 + idx * 200, t + 0.09);
+      gain.gain.setValueAtTime(0.15 + idx * 0.05, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      osc.connect(gain);
+      gain.connect(this.getDestination());
+      osc.start(t);
+      osc.stop(t + 0.11);
+    });
+
+    // Heavy delayed blast at +0.38s
+    const blastT = now + 0.38;
+    const blastOsc = this.ctx.createOscillator();
+    const blastGain = this.ctx.createGain();
+    blastOsc.type = 'sawtooth';
+    blastOsc.frequency.setValueAtTime(320, blastT);
+    blastOsc.frequency.exponentialRampToValueAtTime(30, blastT + 0.9);
+    blastGain.gain.setValueAtTime(0.45, blastT);
+    blastGain.gain.exponentialRampToValueAtTime(0.001, blastT + 0.95);
+    blastOsc.connect(blastGain);
+    blastGain.connect(this.getDestination());
+    blastOsc.start(blastT);
+    blastOsc.stop(blastT + 1.0);
+  }
+
+  // 13. Horror & Panic Glitch Alert
+  playPanicAlert() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    // Dissonant tritone chord
+    [440, 622.25, 880].forEach(f => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(f, now);
+      osc.frequency.linearRampToValueAtTime(f * 0.92, now + 0.45);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      osc.connect(gain);
+      gain.connect(this.getDestination());
+      osc.start(now);
+      osc.stop(now + 0.55);
+    });
+  }
 }
 
 window.GantzAudio = new GantzAudioEngine();

@@ -1024,20 +1024,46 @@
     });
   }
 
-  // 4. HUNTERS
+  // 4. HUNTERS & TACTICAL COMBAT SYSTEM
   let current100HunterIdx = null;
+  let currentCombatTarget = null; // { id, type: 'hunter' | 'alien' }
+  let initiativeQueue = [];
+  let currentTurnIndex = -1;
+  let combatRound = 1;
+  let delayedDamageQueue = [];
+  let combatTurnTimeRemaining = 45;
+  let combatTurnTimerInterval = null;
+  let combatLogs = [];
+
+  function ensureHunterDefaults(h) {
+    if (h.suitMax === undefined) h.suitMax = 8;
+    if (h.suitIntegrity === undefined) h.suitIntegrity = h.suitMax;
+    if (h.hpMax === undefined) h.hpMax = 6;
+    if (h.hp === undefined) h.hp = h.hpMax;
+    if (h.ac === undefined) h.ac = 14;
+    return h;
+  }
 
   function renderHunters() {
     huntersContainer.innerHTML = '';
     const hunters = appState?.hunters || [];
 
     hunters.forEach((h, idx) => {
+      ensureHunterDefaults(h);
       const card = document.createElement('div');
       card.className = 'hunter-card';
       const status = h.status || 'alive';
       const statusLabel = status === 'dead' ? '💀 MUERTO' : (status === 'liberated' ? '✨ LIBERADO' : '🟢 VIVO');
       const statusColor = status === 'dead' ? '#ff003c' : (status === 'liberated' ? '#ffd700' : '#00ff66');
-      const suit = h.suitIntegrity !== undefined ? h.suitIntegrity : 100;
+
+      const suitPct = Math.max(0, Math.min(100, Math.round((h.suitIntegrity / h.suitMax) * 100)));
+      const hpPct = Math.max(0, Math.min(100, Math.round((h.hp / h.hpMax) * 100)));
+      const isSuitBreached = h.suitIntegrity <= 0;
+
+      let panicBadgeHtml = '';
+      if (h.panicState) {
+        panicBadgeHtml = `<div class="panic-badge" style="margin-top: 4px;">😱 ${escapeHtml(h.panicState.label || 'PÁNICO')}</div>`;
+      }
 
       card.innerHTML = `
         <div class="hunter-header-row">
@@ -1049,32 +1075,39 @@
               </span>
             </div>
             <input type="text" class="hunter-nick-input" value="${escapeHtml(h.nickname || 'Novato')}" onchange="updateHunterField(${idx}, 'nickname', this.value)" placeholder="Apodo Gantz..." style="margin-top: 4px;">
+            ${panicBadgeHtml}
           </div>
           <div class="hunter-points-badge">+${h.points || 0} pts</div>
         </div>
 
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 4px 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,240,255,0.15); border-radius: 4px; font-size: 0.72rem;">
-          <span style="color: #94a3b8; font-weight: bold;">🦺 Traje:</span>
-          <div style="display: flex; gap: 4px;">
-            <button type="button" class="btn btn-sm" onclick="setHunterSuit(${idx}, 100)" style="font-size: 0.65rem; padding: 2px 6px; ${suit === 100 ? 'border-color: #00ff66; color: #00ff66; background: rgba(0,255,102,0.15);' : 'opacity: 0.5;'}">🛡️ 100%</button>
-            <button type="button" class="btn btn-sm" onclick="setHunterSuit(${idx}, 50)" style="font-size: 0.65rem; padding: 2px 6px; ${suit === 50 ? 'border-color: #00f0ff; color: #00f0ff; background: rgba(0,240,255,0.15);' : 'opacity: 0.5;'}">⚡ 50%</button>
-            <button type="button" class="btn btn-sm" onclick="setHunterSuit(${idx}, 0)" style="font-size: 0.65rem; padding: 2px 6px; ${suit === 0 ? 'border-color: #ff003c; color: #ff003c; background: rgba(255,0,60,0.15);' : 'opacity: 0.5;'}">💥 Roto</button>
+        <!-- Tactical Dual Health & G-Suit Meter -->
+        <div class="combat-dual-bar">
+          <div style="display: flex; justify-content: space-between; font-size: 0.68rem;">
+            <span style="color: ${isSuitBreached ? '#ff003c' : 'var(--gantz-green)'}; font-weight: bold;">
+              🦺 TRAJE: ${h.suitIntegrity}/${h.suitMax} ${isSuitBreached ? '(ROTO - CA 10)' : `(CA ${h.ac || 14})`}
+            </span>
+            <span style="color: #ff6b81; font-weight: bold;">❤️ PG: ${h.hp}/${h.hpMax}</span>
+          </div>
+          <div class="combat-bar-track">
+            <div class="combat-bar-fill-suit ${isSuitBreached ? 'breached' : ''}" style="width: ${suitPct}%;"></div>
+          </div>
+          <div class="combat-bar-track">
+            <div class="combat-bar-fill-hp" style="width: ${hpPct}%;"></div>
           </div>
         </div>
 
+        <!-- Action Buttons -->
         <div class="hunter-controls-row" style="margin-top: 8px;">
-          <button class="btn btn-sm" onclick="adjustHunterScore(${idx}, -1)">-1</button>
-          <button class="btn btn-sm btn-primary" onclick="adjustHunterScore(${idx}, 1)">+1</button>
-          <button class="btn btn-sm btn-cyan" onclick="adjustHunterScore(${idx}, 5)">+5</button>
-          <button class="btn btn-sm btn-gold" onclick="adjustHunterScore(${idx}, 10)">+10</button>
-          <button class="btn btn-sm btn-cyan" onclick="openHunterRoastModal(${idx})" title="Narrar evaluación cínica de Gantz con IA">
-            🗣️
+          <button class="btn btn-sm btn-cyan" onclick="openCombatActionModal('${h.id}', 'hunter')" style="font-weight: bold; font-size: 0.72rem; padding: 3px 6px;" title="Panel de combate y daño para este cazador">
+            ⚔️ COMBATE
           </button>
-          <button class="btn btn-sm btn-gold" onclick="open100PtsModal(${idx})" title="Menú de 100 Puntos">
-            🏆 100 PTS
-          </button>
-          <div style="flex: 1; text-align: right; font-size: 0.75rem; color: #94a3b8;">
-            Total: <strong>${h.totalPoints || 0}</strong> pts
+          <button class="btn btn-sm" onclick="applyQuickDamage('${h.id}', 'hunter', 2)" style="font-size: 0.68rem; padding: 2px 5px;" title="Resta 2 puntos de daño">-2</button>
+          <button class="btn btn-sm btn-danger" onclick="applyQuickDamage('${h.id}', 'hunter', 5)" style="font-size: 0.68rem; padding: 2px 5px;" title="Resta 5 puntos de daño">-5</button>
+          <button class="btn btn-sm btn-gold" onclick="rollHorrorCheck('${h.id}')" style="font-size: 0.68rem; padding: 2px 5px;" title="Tirada de Horror SAB CD 12">😱</button>
+          <button class="btn btn-sm btn-cyan" onclick="openHunterRoastModal(${idx})" title="Narrar evaluación cínica de Gantz con IA">🗣️</button>
+          <button class="btn btn-sm btn-gold" onclick="open100PtsModal(${idx})" title="Menú de 100 Puntos">🏆 100</button>
+          <div style="flex: 1; text-align: right; font-size: 0.72rem; color: #94a3b8;">
+            Total: <strong>${h.totalPoints || 0}</strong>
           </div>
           <button class="btn btn-sm btn-danger" onclick="removeHunter(${idx})">✕</button>
         </div>
@@ -1086,7 +1119,9 @@
   window.setHunterSuit = function(idx, level) {
     vibrate(20);
     if (!appState || !appState.hunters || !appState.hunters[idx]) return;
-    appState.hunters[idx].suitIntegrity = level;
+    const h = appState.hunters[idx];
+    ensureHunterDefaults(h);
+    h.suitIntegrity = Math.round((level / 100) * (h.suitMax || 8));
     sendDisplay({ type: 'UPDATE_HUNTERS', hunters: appState.hunters });
     renderHunters();
   };
@@ -1118,7 +1153,6 @@
     if (modal100HunterName) modal100HunterName.textContent = h.name;
     if (modal100HunterPoints) modal100HunterPoints.textContent = `Puntos Acumulados: ${h.totalPoints || 0} pts`;
 
-    // Populate dead hunters list
     if (select100Resurrect) {
       select100Resurrect.innerHTML = '';
       const deadHunters = (appState.hunters || []).filter((dh, i) => i !== hunterIdx && dh.status === 'dead');
@@ -1160,14 +1194,12 @@
     let resolutionBody = '';
 
     if (option === 1) {
-      // 1. Borrar memoria y ser liberado
       h.status = 'liberated';
       h.totalPoints = Math.max(0, (h.totalPoints || 0) - 100);
       h.points = 0;
       resolutionTitle = `¡${h.name.toUpperCase()} HA ELEGIDO LA LIBERTAD!`;
       resolutionBody = 'MEMORIA BORRADA // TRASLADO AL MUNDO REAL';
     } else if (option === 2) {
-      // 2. Obtener un arma más potente
       const weaponId = select100Weapon ? select100Weapon.value : 'wpn-zgun';
       const wpn = weaponsList.find(w => w.id === weaponId) || { name: 'Super Arma' };
       h.totalPoints = Math.max(0, (h.totalPoints || 0) - 100);
@@ -1175,7 +1207,6 @@
       resolutionTitle = `¡${h.name.toUpperCase()} OBTIENE: ${wpn.name.toUpperCase()}!`;
       resolutionBody = 'ARSENAL SUPERIOR DESBLOQUEADO EN EL RACK';
     } else if (option === 3) {
-      // 3. Revivir a una persona
       const deadHunterId = select100Resurrect ? select100Resurrect.value : null;
       const deadHunter = (appState.hunters || []).find(dh => String(dh.id) === String(deadHunterId));
       h.totalPoints = Math.max(0, (h.totalPoints || 0) - 100);
@@ -1238,12 +1269,17 @@
     if (!appState) return;
     if (!appState.hunters) appState.hunters = [];
     appState.hunters.push({
-      id: Date.now(),
+      id: String(Date.now()),
       name: `Cazador ${appState.hunters.length + 1}`,
       nickname: 'Carne de Cañón',
       points: 0,
       totalPoints: 0,
-      status: 'alive'
+      status: 'alive',
+      suitMax: 8,
+      suitIntegrity: 8,
+      hpMax: 6,
+      hp: 6,
+      ac: 14
     });
     sendDisplay({ type: 'UPDATE_HUNTERS', hunters: appState.hunters });
     renderHunters();
@@ -1306,14 +1342,12 @@
   };
 
   async function narrateSingleHunterRoast(hunter, text) {
-    // 1. Switch display to scoring mode and highlight hunter
     sendDisplay({
       type: 'EVALUATE_HUNTER_CEREMONY',
       hunter: hunter,
       text: text
     });
 
-    // 2. Synthesize audio via ElevenLabs
     if (window.GantzTTS && window.GantzTTS.hasApiKey()) {
       try {
         log(`🎙️ Generando locución de Gantz para ${hunter.name}...`);
@@ -1354,7 +1388,6 @@
       log(`[${i + 1}/${appState.hunters.length}] Evaluando a ${h.name}...`);
       await narrateSingleHunterRoast(h, text);
 
-      // Wait for speech duration (~14 chars/sec + 1.8s pause)
       const waitTime = Math.max(3500, (text.length / 14) * 1000 + 1800);
       await new Promise(r => setTimeout(r, waitTime));
     }
@@ -1366,16 +1399,429 @@
     }
   };
 
-  // ==================== SHADOWDARK INITIATIVE & TURN TRACKER ====================
-  let initiativeQueue = [];
-  let currentTurnIndex = -1;
+  // ==================== TACTICAL COMBAT ENGINE ====================
+
+  function rollDiceFormula(formula) {
+    if (!formula) return 0;
+    const match = formula.trim().match(/^(\d+)d(\d+)$/i);
+    if (match) {
+      const count = parseInt(match[1], 10);
+      const sides = parseInt(match[2], 10);
+      let sum = 0;
+      for (let i = 0; i < count; i++) {
+        sum += Math.floor(Math.random() * sides) + 1;
+      }
+      return sum;
+    }
+    const num = parseInt(formula, 10);
+    return isNaN(num) ? 0 : num;
+  }
+
+  function addCombatLog(text, type = 'normal') {
+    const entry = {
+      id: Date.now(),
+      text,
+      type,
+      time: new Date().toLocaleTimeString().slice(0, 5)
+    };
+    combatLogs.unshift(entry);
+    if (combatLogs.length > 40) combatLogs.pop();
+    renderCombatLogs();
+  }
+
+  function renderCombatLogs() {
+    const container = document.getElementById('combatLogContainer');
+    if (!container) return;
+    container.innerHTML = combatLogs.map(l => `
+      <div class="combat-log-entry ${l.type}">
+        <span style="color: #64748b; font-size: 0.65rem;">[${l.time}]</span> ${escapeHtml(l.text)}
+      </div>
+    `).join('');
+  }
+
+  function renderDelayedQueue() {
+    const container = document.getElementById('delayedDamageQueueContainer');
+    const countEl = document.getElementById('delayedQueueCount');
+    if (countEl) countEl.textContent = `${delayedDamageQueue.length} pendientes`;
+    if (!container) return;
+
+    if (delayedDamageQueue.length === 0) {
+      container.innerHTML = '<div style="font-size: 0.7rem; color: #64748b; font-style: italic; text-align: center; padding: 4px;">Sin impactos moleculares en cola</div>';
+      return;
+    }
+
+    container.innerHTML = delayedDamageQueue.map(item => `
+      <div class="delayed-queue-card pulsing">
+        <div>
+          <div style="font-weight: bold; color: #fff;">${item.weaponName} ➔ ${escapeHtml(item.targetName)}</div>
+          <div style="font-size: 0.68rem; color: var(--gantz-cyan);">Daño fijado: <strong>${item.damageAmount} pts</strong> (${item.formula}) // En 1 turno</div>
+        </div>
+        <button type="button" class="btn btn-sm btn-danger" onclick="detonateSingleDelayed('${item.id}')" style="padding: 2px 6px; font-size: 0.65rem;">
+          💥 Detonar
+        </button>
+      </div>
+    `).join('');
+  }
+
+  window.openCombatActionModal = function(targetId, targetType = 'hunter') {
+    vibrate(25);
+    currentCombatTarget = { id: targetId, type: targetType };
+    const modal = document.getElementById('combatActionModal');
+    const nameEl = document.getElementById('combatModalTargetName');
+    const suitLabel = document.getElementById('combatModalSuitLabel');
+    const hpLabel = document.getElementById('combatModalHpLabel');
+    const suitBar = document.getElementById('combatModalSuitBar');
+    const hpBar = document.getElementById('combatModalHpBar');
+
+    if (targetType === 'hunter') {
+      const h = (appState?.hunters || []).find(x => String(x.id) === String(targetId));
+      if (!h) return;
+      ensureHunterDefaults(h);
+      if (nameEl) nameEl.textContent = `⚔️ ${h.name.toUpperCase()} (${h.nickname || 'Novato'})`;
+      if (suitLabel) suitLabel.textContent = `🦺 TRAJE: ${h.suitIntegrity}/${h.suitMax}`;
+      if (hpLabel) hpLabel.textContent = `❤️ PG HUMANOS: ${h.hp}/${h.hpMax}`;
+      const suitPct = Math.max(0, Math.min(100, Math.round((h.suitIntegrity / h.suitMax) * 100)));
+      const hpPct = Math.max(0, Math.min(100, Math.round((h.hp / h.hpMax) * 100)));
+      if (suitBar) suitBar.style.width = `${suitPct}%`;
+      if (hpBar) hpBar.style.width = `${hpPct}%`;
+    } else {
+      const alien = appState?.currentAlien;
+      if (nameEl) nameEl.textContent = `👾 ${alien ? alien.name.toUpperCase() : 'ALIEN'}`;
+      if (suitLabel) suitLabel.textContent = `👾 BLINDAJE BIOLÓGICO`;
+      if (hpLabel) hpLabel.textContent = `❤️ HP ENERGÍA`;
+    }
+
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window.closeCombatActionModal = function() {
+    vibrate(20);
+    const modal = document.getElementById('combatActionModal');
+    if (modal) modal.style.display = 'none';
+    currentCombatTarget = null;
+  };
+
+  window.setCombatDmgVal = function(val) {
+    vibrate(15);
+    const input = document.getElementById('combatDamageInput');
+    if (input) {
+      input.value = Math.max(1, (parseInt(input.value, 10) || 0) + val);
+    }
+  };
+
+  window.applyQuickDamage = function(targetId, targetType, amount) {
+    applyCombatDamage(targetId, targetType, amount, 'Físico / Impacto');
+  };
+
+  window.executeApplyDamage = function() {
+    if (!currentCombatTarget) return;
+    const input = document.getElementById('combatDamageInput');
+    const amount = parseInt(input?.value, 10) || 1;
+    applyCombatDamage(currentCombatTarget.id, currentCombatTarget.type, amount, 'Ataque Táctico');
+    closeCombatActionModal();
+  };
+
+  window.executeQueueDelayed = function(weaponName, formula) {
+    if (!currentCombatTarget) return;
+    queueDelayedDamage(currentCombatTarget.id, currentCombatTarget.type, weaponName, formula);
+    closeCombatActionModal();
+  };
+
+  window.executeHorrorCheck = function() {
+    if (!currentCombatTarget || currentCombatTarget.type !== 'hunter') return;
+    rollHorrorCheck(currentCombatTarget.id);
+    closeCombatActionModal();
+  };
+
+  window.executeSuitOverload = function() {
+    if (!currentCombatTarget || currentCombatTarget.type !== 'hunter') return;
+    applySuitOverload(currentCombatTarget.id);
+    closeCombatActionModal();
+  };
+
+  window.executeRestoreSuit = function() {
+    if (!currentCombatTarget || currentCombatTarget.type !== 'hunter') return;
+    restoreHunterSuit(currentCombatTarget.id);
+    closeCombatActionModal();
+  };
+
+  window.executeHealHp = function() {
+    if (!currentCombatTarget || currentCombatTarget.type !== 'hunter') return;
+    healHunterHp(currentCombatTarget.id);
+    closeCombatActionModal();
+  };
+
+  function applyCombatDamage(targetId, targetType, amount, damageType = 'Impacto') {
+    vibrate(40);
+    if (targetType === 'hunter') {
+      const h = (appState?.hunters || []).find(x => String(x.id) === String(targetId));
+      if (!h) return;
+      ensureHunterDefaults(h);
+
+      const oldSuit = h.suitIntegrity;
+      let absorbed = 0;
+      let overflow = 0;
+
+      if (h.suitIntegrity > 0) {
+        if (amount <= h.suitIntegrity) {
+          h.suitIntegrity -= amount;
+          absorbed = amount;
+          overflow = 0;
+        } else {
+          absorbed = h.suitIntegrity;
+          overflow = amount - h.suitIntegrity;
+          h.suitIntegrity = 0;
+        }
+      } else {
+        overflow = amount;
+      }
+
+      if (overflow > 0) {
+        h.hp = Math.max(0, h.hp - overflow);
+      }
+
+      const suitBreachedNow = oldSuit > 0 && h.suitIntegrity === 0;
+
+      if (suitBreachedNow) {
+        h.ac = 10;
+        addCombatLog(`💥 ¡LOS NODOS DEL TRAJE DE ${h.name.toUpperCase()} HAN REVENTADO! (Fluido azul - CA cae a 10)`, 'breach');
+        if (window.AndroidBridge) {
+          window.AndroidBridge.vibratePattern('suit_breach');
+        } else {
+          vibrate([60, 40, 200, 50, 100]);
+        }
+        sendDisplay({
+          type: 'COMBAT_EVENT',
+          subType: 'SUIT_BREACH',
+          targetName: h.name,
+          title: `¡TRAJE DE ${h.name.toUpperCase()} REVENTADO!`,
+          body: 'NODOS EN SOBRECARGA // CIRCUITO DE FUERZA DESTRUIDO'
+        });
+      } else {
+        addCombatLog(`🩸 ${h.name} recibe ${amount} de daño [${damageType}] (Traje absorbe ${absorbed}, PG -${overflow})`, 'damage');
+        sendDisplay({
+          type: 'COMBAT_EVENT',
+          subType: 'DAMAGE_TAKEN',
+          targetName: h.name,
+          amount,
+          suitRemaining: h.suitIntegrity,
+          hpRemaining: h.hp
+        });
+      }
+
+      if (h.hp === 0) {
+        h.status = 'dead';
+        addCombatLog(`💀 ${h.name.toUpperCase()} HA CAÍDO EN COMBATE.`, 'breach');
+      }
+
+      sendDisplay({ type: 'UPDATE_HUNTERS', hunters: appState.hunters });
+      renderHunters();
+    } else {
+      const alien = appState?.currentAlien;
+      const name = alien ? alien.name : 'Alien';
+      addCombatLog(`💥 Impacto directo a ${name}: ${amount} puntos de daño [${damageType}]`, 'damage');
+      sendDisplay({
+        type: 'COMBAT_EVENT',
+        subType: 'ALIEN_DAMAGE',
+        targetName: name,
+        amount
+      });
+    }
+  }
+
+  function queueDelayedDamage(targetId, targetType, weaponName, diceFormula) {
+    vibrate(35);
+    const damageAmount = rollDiceFormula(diceFormula);
+    let targetName = 'Objetivo';
+
+    if (targetType === 'hunter') {
+      const h = (appState?.hunters || []).find(x => String(x.id) === String(targetId));
+      if (h) targetName = h.name;
+    } else {
+      const alien = appState?.currentAlien;
+      if (alien) targetName = alien.name;
+    }
+
+    const item = {
+      id: `delayed-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      targetId,
+      targetType,
+      targetName,
+      weaponName,
+      formula: diceFormula,
+      damageAmount,
+      turnsRemaining: 1
+    };
+
+    delayedDamageQueue.push(item);
+    renderDelayedQueue();
+
+    if (window.AndroidBridge) {
+      window.AndroidBridge.vibratePattern('xgun');
+    }
+
+    addCombatLog(`🔫 Disparo de ${weaponName} fijado en ${targetName} (${diceFormula} = ${damageAmount} pts). Detonación en 1 turno.`, 'delayed');
+
+    sendDisplay({
+      type: 'COMBAT_EVENT',
+      subType: 'DELAYED_LOCKED',
+      weaponName,
+      targetName,
+      damageAmount
+    });
+  }
+
+  window.detonateSingleDelayed = function(queueId) {
+    const idx = delayedDamageQueue.findIndex(x => x.id === queueId);
+    if (idx === -1) return;
+    const item = delayedDamageQueue.splice(idx, 1)[0];
+    renderDelayedQueue();
+
+    if (window.AndroidBridge) {
+      window.AndroidBridge.vibratePattern('delayed_explosion');
+    } else {
+      vibrate([100, 60, 300]);
+    }
+
+    addCombatLog(`💥 ¡DETONACIÓN MOLECULAR DE ${item.weaponName.toUpperCase()} EN ${item.targetName.toUpperCase()}! (${item.damageAmount} pts)`, 'breach');
+
+    sendDisplay({
+      type: 'COMBAT_EVENT',
+      subType: 'DELAYED_DETONATION',
+      weaponName: item.weaponName,
+      targetName: item.targetName,
+      amount: item.damageAmount
+    });
+
+    applyCombatDamage(item.targetId, item.targetType, item.damageAmount, `${item.weaponName} Molecular`);
+  };
+
+  function processDelayedQueueOnTurnAdvance(activeParticipant) {
+    if (delayedDamageQueue.length === 0) return;
+
+    for (let i = delayedDamageQueue.length - 1; i >= 0; i--) {
+      const item = delayedDamageQueue[i];
+      if (activeParticipant && String(item.targetId) === String(activeParticipant.id)) {
+        detonateSingleDelayed(item.id);
+      }
+    }
+  }
+
+  function rollHorrorCheck(hunterId) {
+    vibrate(40);
+    const h = (appState?.hunters || []).find(x => String(x.id) === String(hunterId));
+    if (!h) return;
+
+    const d20 = Math.floor(Math.random() * 20) + 1;
+    const sabMod = h.sabMod !== undefined ? h.sabMod : 0;
+    const total = d20 + sabMod;
+    const dc = 12;
+
+    if (total >= dc) {
+      addCombatLog(`🛡️ ${h.name} supera el chequeo de Horror (d20: ${d20} + ${sabMod} = ${total} vs CD 12). Mantiene la compostura.`, 'normal');
+      h.panicState = null;
+    } else {
+      const panicTable = [
+        { roll: 1, label: 'PARÁLISIS', effect: 'Incapaz de actuar ni moverse este asalto.' },
+        { roll: 2, label: 'HUIDA DESESPERADA', effect: 'Gasta todo su movimiento alejándose del alien.' },
+        { roll: 3, label: 'DISPARO FRENÉTICO', effect: 'Dispara a ciegas gastando cargas sin apuntar.' },
+        { roll: 4, label: 'BLOQUEO MENTAL', effect: 'Desventaja en todas las tiradas hasta calmarse.' },
+        { roll: 5, label: 'GRITO DELATOR', effect: 'Grita atrayendo la atención del enemigo.' },
+        { roll: 6, label: 'COLAPSO / DESMAYO', effect: 'Cae al suelo en shock.' }
+      ];
+      const d6 = Math.floor(Math.random() * 6);
+      const panicRes = panicTable[d6];
+      h.panicState = panicRes;
+
+      if (window.AndroidBridge) {
+        window.AndroidBridge.vibratePattern('panic');
+      } else {
+        vibrate([50, 40, 50, 40, 150]);
+      }
+
+      addCombatLog(`😱 ¡${h.name.toUpperCase()} ENTRA EN PÁNICO! (d20: ${total} vs CD 12 ➔ Tabla d6 [${panicRes.roll}]: ${panicRes.label})`, 'panic');
+
+      sendDisplay({
+        type: 'COMBAT_EVENT',
+        subType: 'PANIC_TRIGGERED',
+        targetName: h.name,
+        panicLabel: panicRes.label,
+        panicEffect: panicRes.effect
+      });
+    }
+
+    sendDisplay({ type: 'UPDATE_HUNTERS', hunters: appState.hunters });
+    renderHunters();
+  }
+
+  function applySuitOverload(hunterId) {
+    vibrate(30);
+    const h = (appState?.hunters || []).find(x => String(x.id) === String(hunterId));
+    if (!h) return;
+    ensureHunterDefaults(h);
+
+    if (h.suitIntegrity >= 2) {
+      h.suitIntegrity -= 2;
+      addCombatLog(`⚡ ${h.name} activa Sobrecarga Muscular (-2 Traje ➔ Ventaja en tirada / Salto sobrehumano)`, 'normal');
+      if (window.AndroidBridge) window.AndroidBridge.vibratePattern('suit');
+      sendDisplay({ type: 'UPDATE_HUNTERS', hunters: appState.hunters });
+      renderHunters();
+    } else {
+      alert('Integridad de traje insuficiente para sobrecarga.');
+    }
+  }
+
+  function restoreHunterSuit(hunterId) {
+    vibrate(25);
+    const h = (appState?.hunters || []).find(x => String(x.id) === String(hunterId));
+    if (!h) return;
+    ensureHunterDefaults(h);
+    h.suitIntegrity = h.suitMax || 8;
+    h.ac = 14;
+    addCombatLog(`🛡️ Traje de ${h.name} reparado al 100% (CA 14)`, 'normal');
+    sendDisplay({ type: 'UPDATE_HUNTERS', hunters: appState.hunters });
+    renderHunters();
+  }
+
+  function healHunterHp(hunterId) {
+    vibrate(25);
+    const h = (appState?.hunters || []).find(x => String(x.id) === String(hunterId));
+    if (!h) return;
+    ensureHunterDefaults(h);
+    h.hp = h.hpMax || 6;
+    if (h.status === 'dead') h.status = 'alive';
+    addCombatLog(`💚 Puntos de Golpe humanos de ${h.name} restaurados al máximo (${h.hpMax} PG)`, 'normal');
+    sendDisplay({ type: 'UPDATE_HUNTERS', hunters: appState.hunters });
+    renderHunters();
+  }
+
+  window.resetCombatTurnTimer = function() {
+    combatTurnTimeRemaining = 45;
+    const el = document.getElementById('combatTurnTimer');
+    if (el) el.textContent = `${combatTurnTimeRemaining}s`;
+
+    if (combatTurnTimerInterval) clearInterval(combatTurnTimerInterval);
+    combatTurnTimerInterval = setInterval(() => {
+      combatTurnTimeRemaining--;
+      if (el) el.textContent = `${Math.max(0, combatTurnTimeRemaining)}s`;
+      if (combatTurnTimeRemaining <= 0) {
+        clearInterval(combatTurnTimerInterval);
+        vibrate([80, 50, 80]);
+        addCombatLog(`⏱️ ¡Tiempo de turno agotado!`, 'panic');
+      }
+    }, 1000);
+  };
 
   window.rollInitiative = function() {
     vibrate(45);
     initiativeQueue = [];
+    combatRound = 1;
+    const roundBadge = document.getElementById('combatRoundBadge');
+    if (roundBadge) roundBadge.textContent = `ASALTO #${combatRound}`;
+
     const hunters = appState?.hunters || [];
     hunters.forEach(h => {
-      if (!h.isDead && h.status !== 'dead') {
+      if (h.status !== 'dead') {
         const roll = Math.floor(Math.random() * 20) + 1;
         initiativeQueue.push({
           id: h.id,
@@ -1401,6 +1847,8 @@
     currentTurnIndex = 0;
     renderInitiativeList();
     broadcastActiveTurn();
+    resetCombatTurnTimer();
+    addCombatLog(`🎲 Iniciativa lanzada para el Asalto #${combatRound}. Comienza: ${initiativeQueue[0]?.name}`, 'normal');
   };
 
   window.nextTurn = function() {
@@ -1409,9 +1857,24 @@
       rollInitiative();
       return;
     }
+
+    const prevIndex = currentTurnIndex;
     currentTurnIndex = (currentTurnIndex + 1) % initiativeQueue.length;
+
+    // Detect new round wrap-around
+    if (currentTurnIndex === 0 && prevIndex >= 0) {
+      combatRound++;
+      const roundBadge = document.getElementById('combatRoundBadge');
+      if (roundBadge) roundBadge.textContent = `ASALTO #${combatRound}`;
+      addCombatLog(`🔄 ── INICIO DEL ASALTO #${combatRound} ──`, 'normal');
+    }
+
+    const activeParticipant = initiativeQueue[currentTurnIndex];
+    processDelayedQueueOnTurnAdvance(activeParticipant);
+
     renderInitiativeList();
     broadcastActiveTurn();
+    resetCombatTurnTimer();
   };
 
   function broadcastActiveTurn() {
@@ -1428,6 +1891,7 @@
       type: 'INITIATIVE_UPDATE',
       activeName: activeName,
       activeId: activeId,
+      round: combatRound,
       queue: initiativeQueue
     });
   }
@@ -1445,10 +1909,15 @@
     initiativeQueue.forEach((item, idx) => {
       const isActive = idx === currentTurnIndex;
       const row = document.createElement('div');
-      row.style.cssText = `display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-radius: 4px; font-size: 0.78rem; font-family: monospace; ${isActive ? 'background: rgba(255,215,0,0.2); border: 1px solid #ffd700; color: #fff; font-weight: bold;' : 'background: #090d16; border: 1px solid #1e293b; color: #94a3b8;'}`;
+      row.style.cssText = `display: flex; justify-content: space-between; align-items: center; padding: 5px 8px; border-radius: 4px; font-size: 0.78rem; font-family: monospace; ${isActive ? 'background: rgba(255,215,0,0.2); border: 1px solid #ffd700; color: #fff; font-weight: bold;' : 'background: #090d16; border: 1px solid #1e293b; color: #94a3b8;'}`;
       row.innerHTML = `
-        <span>${isActive ? '⚔️ ' : ''}#${idx + 1} ${escapeHtml(item.name)}</span>
-        <span style="color: ${item.isAlien ? '#ff003c' : 'var(--gantz-gold)'}; font-weight: bold;">d20: ${item.roll}</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span>${isActive ? '⚔️ ' : ''}#${idx + 1} ${escapeHtml(item.name)}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="color: ${item.isAlien ? '#ff003c' : 'var(--gantz-gold)'}; font-weight: bold;">d20: ${item.roll}</span>
+          <button type="button" class="btn btn-sm" onclick="openCombatActionModal('${item.id}', '${item.isAlien ? 'alien' : 'hunter'}')" style="padding: 1px 6px; font-size: 0.65rem; border-color: var(--gantz-cyan); color: var(--gantz-cyan);">Acción</button>
+        </div>
       `;
       container.appendChild(row);
     });

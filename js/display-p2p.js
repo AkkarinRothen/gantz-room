@@ -955,17 +955,23 @@
         }
         break;
 
-      case 'INITIATIVE_UPDATE':
+      case 'INITIATIVE_UPDATE': {
         const hudActiveTurn = document.getElementById('hudActiveTurn');
         if (hudActiveTurn) {
           if (msg.activeName) {
             hudActiveTurn.style.display = 'inline-block';
-            hudActiveTurn.textContent = `⚔️ TURNO: ${msg.activeName.toUpperCase()}`;
+            hudActiveTurn.textContent = `⚔️ ${msg.round ? `ASALTO #${msg.round} // ` : ''}TURNO: ${msg.activeName.toUpperCase()}`;
           } else {
             hudActiveTurn.style.display = 'none';
           }
         }
         break;
+      }
+
+      case 'COMBAT_EVENT': {
+        handleDisplayCombatEvent(msg);
+        break;
+      }
 
       case 'RADAR_UPDATE':
         updateRadarDisplay(msg);
@@ -1010,6 +1016,80 @@
             radarStatusBadge.style.color = '#00ff66';
             radarStatusBadge.style.background = 'rgba(0,255,102,0.15)';
           }
+        }
+        break;
+    }
+  }
+
+  let combatBannerTimeout = null;
+
+  function showCombatBanner(title, body, theme = 'red', durationMs = 4000) {
+    const banner = document.getElementById('combatEventBanner');
+    const content = document.getElementById('combatEventContent');
+    const titleEl = document.getElementById('combatEventTitle');
+    const bodyEl = document.getElementById('combatEventBody');
+    if (!banner || !content || !titleEl || !bodyEl) return;
+
+    content.className = `combat-event-content ${theme}`;
+    titleEl.textContent = title;
+    bodyEl.textContent = body;
+    banner.style.display = 'block';
+
+    if (combatBannerTimeout) clearTimeout(combatBannerTimeout);
+    combatBannerTimeout = setTimeout(() => {
+      banner.style.display = 'none';
+    }, durationMs);
+  }
+
+  function handleDisplayCombatEvent(msg) {
+    logNet(`Display evento de combate recibido [${msg.subType}]`, msg);
+
+    switch (msg.subType) {
+      case 'SUIT_BREACH':
+        showCombatBanner(
+          `💥 ¡TRAJE DE ${(msg.targetName || 'CAZADOR').toUpperCase()} REVENTADO!`,
+          'NODOS EN SOBRECARGA // CIRCUITO DE FUERZA DESTRUIDO (CA 10)',
+          'red',
+          4500
+        );
+        if (window.GantzAudio && typeof window.GantzAudio.playSuitBreach === 'function') {
+          window.GantzAudio.playSuitBreach();
+        }
+        break;
+
+      case 'DELAYED_LOCKED':
+        showCombatBanner(
+          `🎯 IMPACTO MOLECULAR FIJADO`,
+          `${(msg.weaponName || 'X-GUN').toUpperCase()} ➔ ${(msg.targetName || 'OBJETIVO').toUpperCase()} // DETONACIÓN EN 1 TURNO`,
+          'cyan',
+          3500
+        );
+        if (window.GantzAudio && typeof window.GantzAudio.playRadarPing === 'function') {
+          window.GantzAudio.playRadarPing();
+        }
+        break;
+
+      case 'DELAYED_DETONATION':
+        showCombatBanner(
+          `💥 ¡DETONACIÓN MOLECULAR DE ${(msg.weaponName || 'X-GUN').toUpperCase()}!`,
+          `${msg.amount || 0} PUNTOS DE DAÑO EN ${(msg.targetName || 'OBJETIVO').toUpperCase()}`,
+          'red',
+          4000
+        );
+        if (window.GantzAudio && typeof window.GantzAudio.playDelayedExplosion === 'function') {
+          window.GantzAudio.playDelayedExplosion();
+        }
+        break;
+
+      case 'PANIC_TRIGGERED':
+        showCombatBanner(
+          `😱 ¡${(msg.targetName || 'CAZADOR').toUpperCase()} EN PÁNICO: ${(msg.panicLabel || 'PÁNICO').toUpperCase()}!`,
+          msg.panicEffect || 'INCAPAZ DE ACTUAR CON NORMALIDAD',
+          'gold',
+          4500
+        );
+        if (window.GantzAudio && typeof window.GantzAudio.playPanicAlert === 'function') {
+          window.GantzAudio.playPanicAlert();
         }
         break;
     }

@@ -214,20 +214,49 @@
         <div class="hunter-grid" id="huntersContainer"></div>
       </div>
 
-      <!-- Shadowdark Initiative & Turn Tracker -->
-      <div class="card" style="margin-top: 14px;">
+      </div>
+
+      <!-- Shadowdark Tactical Combat & Turn Tracker -->
+      <div class="card" style="margin-top: 14px; border-color: rgba(0, 240, 255, 0.3);">
         <div class="card-header">
-          <div class="card-title">⚔️ INICIATIVA Y GESTOR DE TURNOS</div>
+          <div class="card-title" style="color: var(--gantz-cyan);">⚔️ GESTOR DE COMBATE TÁCTICO</div>
           <span id="initiativeStatusText" style="font-size: 0.72rem; color: #ffd700; font-weight: bold;">TURNO: --</span>
         </div>
-        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px;">
-          Lanza iniciativa d20 para el grupo o avanza el turno en combate:
+
+        <div class="combat-hud-grid">
+          <div class="combat-round-badge" id="combatRoundBadge">ASALTO #1</div>
+          <div class="combat-timer-badge">
+            <span>⏱️</span> <span id="combatTurnTimer">45s</span>
+            <button type="button" class="btn btn-sm" onclick="resetCombatTurnTimer()" style="padding: 1px 4px; font-size: 0.6rem; margin-left: 4px;">↺</button>
+          </div>
         </div>
+
         <div class="btn-grid-2" style="margin-bottom: 10px;">
           <button type="button" class="btn btn-gold btn-sm" onclick="rollInitiative()">🎲 Tirar Iniciativa</button>
           <button type="button" class="btn btn-primary btn-sm" onclick="nextTurn()">▶ Siguiente Turno</button>
         </div>
-        <div id="initiativeListContainer" style="display: flex; flex-direction: column; gap: 4px;"></div>
+
+        <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">ORDEN DE ACCIÓN:</div>
+        <div id="initiativeListContainer" style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px;"></div>
+
+        <!-- Delayed Damage (X-Gun) Queue -->
+        <div style="border-top: 1px dashed rgba(255, 0, 60, 0.3); padding-top: 8px; margin-top: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <div style="font-size: 0.72rem; color: var(--gantz-red); font-weight: bold;">🎯 COLA DE DAÑO RETARDADO (X-GUN / X-RIFLE):</div>
+            <span id="delayedQueueCount" style="font-size: 0.68rem; color: #64748b;">0 pendientes</span>
+          </div>
+          <div id="delayedDamageQueueContainer" style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="font-size: 0.7rem; color: #64748b; font-style: italic; text-align: center; padding: 4px;">Sin impactos moleculares en cola</div>
+          </div>
+        </div>
+
+        <!-- Real-Time Combat Event Log -->
+        <div style="border-top: 1px dashed rgba(0, 240, 255, 0.2); padding-top: 8px; margin-top: 8px;">
+          <div style="font-size: 0.72rem; color: var(--gantz-green); font-weight: bold; margin-bottom: 4px;">📜 REGISTRO DE COMBATE EN VIVO:</div>
+          <div class="combat-log-container" id="combatLogContainer">
+            <div class="combat-log-entry">Sistema táctico listo para la cacería.</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1078,6 +1107,76 @@
         <button type="button" class="btn" onclick="closeHunterRoastModal()">Cancelar</button>
         <button type="button" class="btn btn-primary" onclick="confirmNarrateHunterScore()" style="font-weight: bold;">
           🗣️ PROYECTAR Y NARRAR EN ESFERA
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: TACTICAL COMBAT ACTION CONTROLLER ==================== -->
+  <div class="modal-overlay" id="combatActionModal" style="display: none; z-index: 10011;">
+    <div class="modal-content" style="max-width: 480px; text-align: left; border-color: var(--gantz-cyan); box-shadow: 0 0 35px rgba(0,240,255,0.35);">
+      <div class="card-header" style="border-bottom: 1px solid rgba(0,240,255,0.3); padding-bottom: 8px;">
+        <div class="card-title" style="color: var(--gantz-cyan); display: flex; align-items: center; gap: 8px;">
+          <span>⚔️</span> <span id="combatModalTargetName">ACCIÓN DE COMBATE</span>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="closeCombatActionModal()">✕</button>
+      </div>
+
+      <!-- Current Status Bar -->
+      <div id="combatModalStatusCard" style="background: rgba(0,0,0,0.6); padding: 10px; border-radius: 6px; border: 1px solid rgba(0,240,255,0.2); margin: 10px 0;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 4px;">
+          <span id="combatModalSuitLabel" style="color: var(--gantz-green); font-weight: bold;">🦺 TRAJE: 8/8</span>
+          <span id="combatModalHpLabel" style="color: #ff6b81; font-weight: bold;">❤️ PG HUMANOS: 6/6</span>
+        </div>
+        <div class="combat-bar-track" style="margin-bottom: 4px;">
+          <div class="combat-bar-fill-suit" id="combatModalSuitBar" style="width: 100%;"></div>
+        </div>
+        <div class="combat-bar-track">
+          <div class="combat-bar-fill-hp" id="combatModalHpBar" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- Damage Controller Form -->
+      <div style="background: rgba(255,0,60,0.08); border: 1px solid rgba(255,0,60,0.25); border-radius: 6px; padding: 10px; margin-bottom: 10px;">
+        <div style="font-size: 0.75rem; color: var(--gantz-red); font-weight: bold; margin-bottom: 6px;">💥 INFLIGIR DAÑO (DESBORDAMIENTO AUTOMÁTICO):</div>
+        <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+          <input type="number" id="combatDamageInput" value="4" min="1" max="99" class="form-input" style="font-family: monospace; font-size: 1.1rem; font-weight: bold; width: 70px; text-align: center;">
+          <div style="display: flex; flex-wrap: wrap; gap: 4px; flex: 1;">
+            <button type="button" class="btn btn-sm" onclick="setCombatDmgVal(1)">+1</button>
+            <button type="button" class="btn btn-sm" onclick="setCombatDmgVal(3)">+3</button>
+            <button type="button" class="btn btn-sm" onclick="setCombatDmgVal(6)">+6</button>
+            <button type="button" class="btn btn-sm" onclick="setCombatDmgVal(10)">+10</button>
+            <button type="button" class="btn btn-sm" onclick="setCombatDmgVal(15)">+15</button>
+          </div>
+        </div>
+        <button type="button" class="btn btn-danger" onclick="executeApplyDamage()" style="width: 100%; font-weight: bold; padding: 8px;">
+          💥 APLICAR DAÑO (Resta Traje ➔ Desborda a PG)
+        </button>
+      </div>
+
+      <!-- Weapon & Action Buttons -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;">
+        <button type="button" class="btn btn-cyan btn-sm" onclick="executeQueueDelayed('X-Gun', '2d8')" style="font-size: 0.72rem; padding: 8px 4px;">
+          🔫 X-Gun (2d8 Retraso)
+        </button>
+        <button type="button" class="btn btn-cyan btn-sm" onclick="executeQueueDelayed('X-Rifle', '3d8')" style="font-size: 0.72rem; padding: 8px 4px;">
+          🎯 X-Rifle (3d8 Retraso)
+        </button>
+        <button type="button" class="btn btn-gold btn-sm" onclick="executeHorrorCheck()" style="font-size: 0.72rem; padding: 8px 4px;">
+          😱 Test Horror (SAB CD 12)
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="executeSuitOverload()" style="font-size: 0.72rem; padding: 8px 4px;">
+          ⚡ Sobrecarga (-2 Traje)
+        </button>
+      </div>
+
+      <!-- Heal & Reset -->
+      <div class="btn-grid-2">
+        <button type="button" class="btn btn-sm" onclick="executeRestoreSuit()" style="border-color: #00ff66; color: #00ff66;">
+          🛡️ Reparar Traje (+100%)
+        </button>
+        <button type="button" class="btn btn-sm" onclick="executeHealHp()" style="border-color: #00f0ff; color: #00f0ff;">
+          💚 Curar PG (+Todo)
         </button>
       </div>
     </div>

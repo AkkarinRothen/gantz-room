@@ -102,6 +102,20 @@
           banner.style.display = 'none';
         }
       }
+    } else if (data.type === 'COMBAT_EVENT') {
+      if (data.subType === 'SUIT_BREACH') {
+        vibrate([80, 50, 200, 60, 150]);
+      } else if (data.subType === 'DELAYED_DETONATION') {
+        vibrate([100, 60, 300]);
+      } else if (data.subType === 'PANIC_TRIGGERED') {
+        vibrate([50, 40, 50, 40, 120]);
+      } else if (data.subType === 'DAMAGE_TAKEN') {
+        vibrate([60, 40, 60]);
+      }
+      if (appState && data.hunters) {
+        appState.hunters = data.hunters;
+        updateUI();
+      }
     }
   }
 
@@ -151,37 +165,88 @@
     const hunters = appState.hunters || [];
     renderHunterSelection(hunters);
 
-    const myHunter = hunters.find(h => h.id === selectedHunterId) || hunters[0];
+    const myHunter = hunters.find(h => String(h.id) === String(selectedHunterId)) || hunters[0];
     if (myHunter) {
       selectedHunterId = myHunter.id;
-      if (playerHunterName) playerHunterName.textContent = myHunter.name.toUpperCase();
-      if (playerPointsText) playerPointsText.textContent = `${myHunter.score || 0} pts`;
+      if (playerHunterName) playerHunterName.textContent = `${myHunter.name.toUpperCase()} (${myHunter.nickname || 'Novato'})`;
+      if (playerPointsText) playerPointsText.textContent = `${myHunter.points || myHunter.score || 0} pts`;
       
-      if (myHunter.isDead) {
+      const suitMax = myHunter.suitMax || 8;
+      const suitVal = myHunter.suitIntegrity !== undefined ? myHunter.suitIntegrity : suitMax;
+      const hpMax = myHunter.hpMax || 6;
+      const hpVal = myHunter.hp !== undefined ? myHunter.hp : hpMax;
+      const isDead = myHunter.status === 'dead' || myHunter.isDead || hpVal <= 0;
+      const isBreached = suitVal <= 0;
+
+      const playerHpText = document.getElementById('playerHpText');
+      const playerHpFill = document.getElementById('playerHpFill');
+      const playerPanicAlert = document.getElementById('playerPanicAlert');
+      const playerPanicTitle = document.getElementById('playerPanicTitle');
+      const playerPanicDesc = document.getElementById('playerPanicDesc');
+
+      // Status Text & Armor Class
+      if (isDead) {
         if (playerStatusText) {
-          playerStatusText.textContent = '💀 MUERTO';
+          playerStatusText.textContent = '💀 MUERTO // CA --';
           playerStatusText.style.color = '#ff003c';
         }
       } else {
+        const ac = isBreached ? 10 : (myHunter.ac || 14);
         if (playerStatusText) {
-          playerStatusText.textContent = 'EN COMBATE';
-          playerStatusText.style.color = 'var(--gantz-green)';
+          playerStatusText.textContent = `EN COMBATE // CA ${ac}`;
+          playerStatusText.style.color = isBreached ? '#ff003c' : 'var(--gantz-green)';
         }
       }
 
-      // Suit logic
-      if (myHunter.suitBroken) {
-        if (playerSuitText) { playerSuitText.textContent = '💥 0% DESTRUIDO'; playerSuitText.style.color = '#ff003c'; }
-        if (playerSuitFill) { playerSuitFill.className = 'suit-meter-fill broken'; }
-        if (playerSuitWarning) { playerSuitWarning.textContent = '⚠️ ¡ADVERTENCIA! Las cápsulas de fluido negro han reventado. No tienes protección.'; }
-      } else if (myHunter.suitCracked) {
-        if (playerSuitText) { playerSuitText.textContent = '⚡ 50% FISURADO'; playerSuitText.style.color = '#ffd700'; }
-        if (playerSuitFill) { playerSuitFill.className = 'suit-meter-fill cracked'; }
-        if (playerSuitWarning) { playerSuitWarning.textContent = '⚡ Fuga de fluido biomecánico detectada tras impacto crítico.'; }
-      } else {
-        if (playerSuitText) { playerSuitText.textContent = '🛡️ 100% ÓPTIMO'; playerSuitText.style.color = 'var(--gantz-green)'; }
-        if (playerSuitFill) { playerSuitFill.className = 'suit-meter-fill'; }
-        if (playerSuitWarning) { playerSuitWarning.textContent = '✓ Circuitos de contracción muscular y cápsulas intactas.'; }
+      // Panic State
+      if (playerPanicAlert) {
+        if (myHunter.panicState) {
+          playerPanicAlert.style.display = 'block';
+          if (playerPanicTitle) playerPanicTitle.textContent = `😱 ¡EN PÁNICO: ${myHunter.panicState.label.toUpperCase()}!`;
+          if (playerPanicDesc) playerPanicDesc.textContent = myHunter.panicState.effect || 'Incapaz de actuar con normalidad.';
+        } else {
+          playerPanicAlert.style.display = 'none';
+        }
+      }
+
+      // G-Suit Logic
+      const suitPct = Math.max(0, Math.min(100, Math.round((suitVal / suitMax) * 100)));
+      if (playerSuitFill) {
+        playerSuitFill.style.width = `${suitPct}%`;
+        playerSuitFill.className = isBreached ? 'suit-meter-fill broken' : (suitPct <= 50 ? 'suit-meter-fill cracked' : 'suit-meter-fill');
+      }
+
+      if (playerSuitText) {
+        if (isBreached) {
+          playerSuitText.textContent = `💥 0/${suitMax} (DESTRUIDO)`;
+          playerSuitText.style.color = '#ff003c';
+        } else {
+          playerSuitText.textContent = `🛡️ ${suitVal}/${suitMax} (${suitPct}% ÓPTIMO)`;
+          playerSuitText.style.color = suitPct <= 50 ? '#ffd700' : 'var(--gantz-green)';
+        }
+      }
+
+      if (playerSuitWarning) {
+        if (isBreached) {
+          playerSuitWarning.textContent = '⚠️ ¡ADVERTENCIA! Los nodos biomecánicos han reventado. Fluido derramado (CA 10).';
+          playerSuitWarning.style.color = '#ff003c';
+        } else if (suitPct <= 50) {
+          playerSuitWarning.textContent = '⚡ Tensión muscular alta en el traje. Estructura bajo estrés (CA 14).';
+          playerSuitWarning.style.color = '#ffd700';
+        } else {
+          playerSuitWarning.textContent = '✓ Circuitos de contracción muscular y cápsulas intactas (CA 14).';
+          playerSuitWarning.style.color = '#94a3b8';
+        }
+      }
+
+      // Human Hit Points (PG) Logic
+      const hpPct = Math.max(0, Math.min(100, Math.round((hpVal / hpMax) * 100)));
+      if (playerHpFill) {
+        playerHpFill.style.width = `${hpPct}%`;
+      }
+      if (playerHpText) {
+        playerHpText.textContent = `${hpVal}/${hpMax} PG (${hpPct}%)`;
+        playerHpText.style.color = hpPct <= 30 ? '#ff003c' : '#ff6b81';
       }
     }
   }

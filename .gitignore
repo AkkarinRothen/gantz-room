@@ -3,11 +3,3 @@ node_modules/
 Thumbs.db
 desktop.ini
 *.log
-
-# Private Configuration & Secrets (Never commit to Git)
-config.js
-secrets.js
-.env
-.env.*
-*.key
-credentials.json

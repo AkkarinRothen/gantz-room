@@ -973,3 +973,144 @@ body {
 .touch-active {
   box-shadow: 0 0 15px var(--gantz-cyan) !important;
 }
+
+/* ==================== TACTICAL COMBAT TRACKER & AUTOMATION ==================== */
+.combat-hud-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.combat-round-badge {
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid var(--gantz-cyan);
+  color: var(--gantz-cyan);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.combat-timer-badge {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid var(--gantz-gold);
+  color: var(--gantz-gold);
+  font-family: var(--font-digital);
+  font-size: 1.1rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.combat-dual-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.combat-bar-track {
+  height: 8px;
+  background: #111827;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.combat-bar-fill-suit {
+  height: 100%;
+  background: linear-gradient(90deg, #00ff66, #00f0ff);
+  transition: width 0.3s ease;
+}
+
+.combat-bar-fill-suit.breached {
+  background: #ff003c;
+  animation: pulse 1s infinite;
+}
+
+.combat-bar-fill-hp {
+  height: 100%;
+  background: linear-gradient(90deg, #ff003c, #ff6b81);
+  transition: width 0.3s ease;
+}
+
+.delayed-queue-card {
+  background: rgba(255, 0, 60, 0.08);
+  border: 1px dashed var(--gantz-red);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.75rem;
+}
+
+.delayed-queue-card.pulsing {
+  animation: pulse 1.2s infinite;
+}
+
+.panic-badge {
+  background: rgba(255, 0, 60, 0.2);
+  border: 1px solid var(--gantz-red);
+  color: #ff6b81;
+  font-size: 0.68rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.combat-log-container {
+  background: #020305;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 8px 10px;
+  max-height: 140px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.combat-log-entry {
+  line-height: 1.3;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  padding-bottom: 2px;
+}
+
+.combat-log-entry.damage {
+  color: #ff6b81;
+}
+
+.combat-log-entry.breach {
+  color: #ff003c;
+  font-weight: bold;
+}
+
+.combat-log-entry.delayed {
+  color: var(--gantz-cyan);
+}
+
+.combat-log-entry.panic {
+  color: var(--gantz-gold);
+}
+

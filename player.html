@@ -31,16 +31,34 @@
         <span id="playerHunterName" style="color: #fff; margin-left: auto;">SELECCIONA TU CAZADOR</span>
       </div>
 
+      <!-- Panic Warning Box (If in horror panic) -->
+      <div id="playerPanicAlert" style="display: none; background: rgba(255,0,60,0.18); border: 1px solid #ff003c; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; text-align: center;">
+        <div id="playerPanicTitle" style="font-family: var(--font-display); font-size: 0.82rem; font-weight: 900; color: #ff6b81;">😱 ¡EN PÁNICO: PARÁLISIS!</div>
+        <div id="playerPanicDesc" style="font-size: 0.72rem; color: #cbd5e1; margin-top: 2px;">Incapaz de actuar ni moverse este asalto.</div>
+      </div>
+
+      <!-- G-Suit Integrity Meter -->
       <div class="suit-meter-box">
         <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
           <span>INTEGRIDAD DEL TRAJE G-SUIT:</span>
-          <span id="playerSuitText" style="color: var(--gantz-green); font-weight: bold;">100% ÓPTIMO</span>
+          <span id="playerSuitText" style="color: var(--gantz-green); font-weight: bold;">8/8 (100% ÓPTIMO)</span>
         </div>
         <div class="suit-meter-bar">
           <div class="suit-meter-fill" id="playerSuitFill"></div>
         </div>
         <div id="playerSuitWarning" style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
-          ✓ Circuitos de contracción muscular y cápsulas intactas.
+          ✓ Circuitos de contracción muscular y cápsulas intactas. (CA 14)
+        </div>
+      </div>
+
+      <!-- Human Hit Points (PG) Meter -->
+      <div class="suit-meter-box" style="margin-top: 10px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+          <span style="color: #ff6b81;">❤️ PUNTOS DE GOLPE HUMANOS (PG):</span>
+          <span id="playerHpText" style="color: #ff6b81; font-weight: bold;">6/6 (100%)</span>
+        </div>
+        <div class="suit-meter-bar" style="background: #1e293b;">
+          <div class="suit-meter-fill" id="playerHpFill" style="background: linear-gradient(90deg, #ff003c, #ff6b81);"></div>
         </div>
       </div>
 
@@ -50,8 +68,8 @@
           <div id="playerPointsText" style="font-family: var(--font-display); font-size: 1.3rem; color: var(--gantz-gold); font-weight: 900;">0 pts</div>
         </div>
         <div style="background: #020305; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
-          <div style="font-size: 0.7rem; color: #94a3b8;">ESTADO VITAL:</div>
-          <div id="playerStatusText" style="font-family: var(--font-display); font-size: 1.1rem; color: var(--gantz-green); font-weight: bold;">EN COMBATE</div>
+          <div style="font-size: 0.7rem; color: #94a3b8;">ESTADO VITAL / CLASE DE ARMADURA:</div>
+          <div id="playerStatusText" style="font-family: var(--font-display); font-size: 1.1rem; color: var(--gantz-green); font-weight: bold;">EN COMBATE (CA 14)</div>
         </div>
       </div>
     </div>
